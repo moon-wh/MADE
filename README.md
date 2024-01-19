@@ -60,7 +60,7 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 -
 
 #### Arguments
 
-- `${1}`: config file path
+- `${1}`: config file path.
 - `${2}`: whether adding attributes.
 - `${3}`: whether masking clothing-relevant attribute.
 
