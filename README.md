@@ -2,7 +2,7 @@
 ![PyTorch =1.13.1](https://img.shields.io/badge/PyTorch-=1.13.1-blue.svg)
 
 # Masked Attribute Description Embedding for Cloth-Changing Person Re-identification.
-The *official* repository for  [Masked Attribute Description Embedding for Cloth-Changing Person Re-identification.](http://arxiv.org/abs/2401.05646)
+The *official* repository for  [Masked Attribute Description Embedding for Cloth-Changing Person Re-identification](http://arxiv.org/abs/2401.05646).
 
 ## Pipeline
 
@@ -98,7 +98,7 @@ Codebase from [TransReid](https://github.com/damo-cv/transreid) , [CAL](https://
 
 ## Citation
 
-If you find this code useful for your research, please cite our paper
+If you find this code useful for your research, please cite our paper:
 
 ```
 @misc{peng2024masked,
