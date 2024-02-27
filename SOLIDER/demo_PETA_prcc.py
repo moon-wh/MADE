@@ -4,9 +4,11 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 from dataset.augmentation import get_transform
+from models.backbone.swin_transformer import *
 from models.model_factory import build_backbone, build_classifier
 
 import torch
+from torch.utils.data import Dataset, DataLoader
 import os.path as osp
 from PIL import Image
 from configs import cfg, update_config
@@ -14,7 +16,44 @@ from configs import cfg, update_config
 from models.base_block import FeatClassifier
 from tools.function import get_model_log_path, get_reload_weight
 from tools.utils import set_seed, str2bool
+from tqdm import tqdm
 set_seed(605)
+
+class PRCCLoader(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.imgs = []
+        for name in os.listdir(root_dir+'/rgb'):
+            if name == 'train' or name == 'val':
+                pdirs = glob.glob(osp.join(root_dir+'/rgb/'+name, '*'))
+                pdirs.sort()
+                for pdir in pdirs:
+                    pid = int(osp.basename(pdir))
+                    img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
+                    for img_dir in img_dirs:
+                        self.imgs.append(img_dir)
+            else:
+                for cam in ['A', 'B', 'C']:
+                    pdirs = glob.glob(osp.join(root_dir+'/rgb/test', cam, '*'))
+                    pdirs.sort()
+                    for pdir in pdirs:
+                        pid = int(osp.basename(pdir))
+                        img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
+                        for img_dir in img_dirs:
+                            self.imgs.append(img_dir)
+    
+    def __len__(self):
+        return len(self.imgs)
+    
+    def __getitem__(self, idx):
+        img_dir = self.imgs[idx]
+        img = Image.open(img_dir)
+        img = img.convert("RGB")
+        if self.transform:
+            img = self.transform(img)
+        return (img, img_dir)
+        
 
 clas_name = ['accessoryHat','accessoryMuffler','accessoryNothing','accessorySunglasses','hairLong' ,
              'upperBodyCasual', 'upperBodyFormal', 'upperBodyJacket', 'upperBodyLogo', 'upperBodyPlaid', 'upperBodyShortSleeve',
@@ -38,6 +77,7 @@ clas_name = ['accessoryHat','accessoryMuffler','accessoryNothing','accessorySung
 
 def main(cfg, args):
     exp_dir = os.path.join('exp_result', cfg.DATASET.NAME)
+    print("--------------- exp_dir", exp_dir)
     model_dir, log_dir = get_model_log_path(exp_dir, cfg.NAME)
 
     train_tsfm, valid_tsfm = get_transform(cfg)
@@ -60,67 +100,38 @@ def main(cfg, args):
     if torch.cuda.is_available():
         model = torch.nn.DataParallel(model).cuda()
 
-    model = get_reload_weight(model_dir, model, pth='')   # Change weights path
+    model = get_reload_weight(model_dir, model, pth='ckpt_max_2024-02-25_14:41:35.pth')   # Change weights path
     model.eval()
 
+    test_dataset = PRCCLoader(args.test_img, valid_tsfm)
+    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=1)
+
+    f = open('PAR_PETA_105.txt', 'a', encoding='utf-8')
+
     with torch.no_grad():
-        for name in os.listdir(args.test_img+'/rgb'):
-            if name == 'train' or name == 'val':
-                pdirs = glob.glob(osp.join(args.test_img+'/rgb/'+name, '*'))
-                pdirs.sort()
-                for pdir in pdirs:
-                    pid = int(osp.basename(pdir))
-                    img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
-                    for img_dir in img_dirs:
-                        img = Image.open(img_dir)
-                        img = img.convert("RGB")
-                        img = valid_tsfm(img).cuda()
-                        img = img.view(1, *img.size())
-                        valid_logits, attns = model(img)
-                        valid_probs = torch.sigmoid(valid_logits[0]).cpu().numpy()
-                        valid_probs = valid_probs[0]>0.5
-                        for i, val in enumerate(valid_probs):
-                            if val:
-                                with open(args.test_img + '/' + 'PAR_PETA_105.txt', 'a',
-                                          encoding='utf-8') as f:
-                                    f.write(img_dir+' '+ str(i)+' '+ str(1) + '\n')
-                            else:
-                                with open(args.test_img + '/' + 'PAR_PETA_105.txt', 'a',
-                                          encoding='utf-8') as f:
-                                    f.write(img_dir+' '+ str(i)+' '+ str(0) + '\n')
-            else:
-                for cam in ['A', 'B', 'C']:
-                    pdirs = glob.glob(osp.join(args.test_img+'/rgb/test', cam, '*'))
-                    for pdir in pdirs:
-                        pid = int(osp.basename(pdir))
-                        img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
-                        for img_dir in img_dirs:
-                            img = Image.open(img_dir)
-                            img = img.convert("RGB")
-                            img = valid_tsfm(img).cuda()
-                            img = img.view(1, *img.size())
-                            valid_logits, attns = model(img)
-                            valid_probs = torch.sigmoid(valid_logits[0]).cpu().numpy()
-                            valid_probs = valid_probs[0]>0.5
-                            for i, val in enumerate(valid_probs):
-                                if val:
-                                    with open(args.test_img + '/' + 'PAR_PETA_105.txt', 'a',
-                                              encoding='utf-8') as f:
-                                        f.write(img_dir +' '+  str(i) +' '+  str(1) + '\n')
-                                else:
-                                    with open(args.test_img + '/' + 'PAR_PETA_105.txt', 'a',
-                                              encoding='utf-8') as f:
-                                        f.write(img_dir +' '+ str(i) +' '+ str(0) + '\n')
+        for batch_idx, (inputs, imgpaths) in enumerate(tqdm(test_loader)):
+            inputs = inputs.cuda()
+            # print("---------------------- inputs",inputs.shape)
+            valid_logits, attns = model(inputs)
+            # print("---------------------- valid_logits",valid_logits[0].cpu().numpy().shape)
+            for i in range(len(imgpaths)):
+                valid_probs = torch.sigmoid(valid_logits[0]).cpu().numpy()
+                valid_probs = valid_probs[0]>0.5
+                for j, val in enumerate(valid_probs):
+                    if val:
+                        f.write(str(imgpaths[i]) + ' ' + str(j) + ' ' + str(1) + '\n')
+                    else:
+                        f.write(str(imgpaths[i]) + ' ' + str(j) + ' ' + str(0) + '\n')
 
 def argument_parser():
     parser = argparse.ArgumentParser(description="attribute recognition",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--test_img", help="test images", type=str,
-        default="../prcc",
+        default="/home/c3-0/datasets/PRCC/prcc",
     )
     parser.add_argument(
-        "--cfg", help="decide which cfg to use", type=str,default='../MADE/SOLIDER/configs/peta_zs.yaml'
+        "--cfg", help="decide which cfg to use", type=str,default='configs/peta_zs.yaml'
     )
     parser.add_argument("--debug", type=str2bool, default="true")
 

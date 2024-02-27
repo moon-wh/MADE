@@ -10,8 +10,8 @@ model_dict = {
 
 }
 def build_backbone(key, multi_scale=False):
-
-
+    print('Building backbone: {}'.format(key))
+    print('Backbone : {}'.format(BACKBONE))
     model = BACKBONE[key]()
     output_d = model_dict[key]
 
