@@ -17,32 +17,35 @@ from models.base_block import FeatClassifier
 from tools.function import get_model_log_path, get_reload_weight
 from tools.utils import set_seed, str2bool
 from tqdm import tqdm
+import random
 set_seed(605)
 
 class CCVIDLoader(Dataset):
     def __init__(self, root_dir, transform=None):
         self.root_dir = root_dir
         self.transform = transform
-        self.imgs = []
+        self.img_dirs = []
         for session in ['session1', 'session2', 'session3']:
             pdirs = glob.glob(osp.join(root_dir,session,'*'))
             pdirs.sort()
             for pdir in pdirs:
-                pid = int(osp.basename(pdir))
-                img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
-                for img_dir in img_dirs:
-                    self.imgs.append(img_dir)
+                self.img_dirs.append(pdir)
+                # pid = int(osp.basename(pdir))
+                # img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
+                # for img_dir in img_dirs:
+                #     self.imgs.append(img_dir)
     
     def __len__(self):
-        return len(self.imgs)
+        return len(self.img_dirs)
     
     def __getitem__(self, idx):
-        img_dir = self.imgs[idx]
-        img = Image.open(img_dir)
+        tracklet_dir = self.img_dirs[idx]
+        img_path = random.choice(glob.glob(osp.join(tracklet_dir, '*.jpg')))
+        img = Image.open(img_path)
         img = img.convert("RGB")
         if self.transform:
             img = self.transform(img)
-        return (img, img_dir)
+        return (img, tracklet_dir)
         
 
 clas_name = ['accessoryHat','accessoryMuffler','accessoryNothing','accessorySunglasses','hairLong' ,
