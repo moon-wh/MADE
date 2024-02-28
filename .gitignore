@@ -226,6 +226,6 @@ SOLIDER/exp_result/PETA/swin_b.sm08/img_model/*
 SOLIDER/exp_result/PETA/swin_b.sm08/runs/*
 SOLIDER/exp_result/PETA/swin_b.sm08/code_*
 SOLIDER/pretrained
-PAR_PETA_105.txt
+PAR_PETA_105*.txt
 
 *.pth
