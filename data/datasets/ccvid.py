@@ -169,11 +169,7 @@ class CCVID(object):
 
             num_imgs_per_tracklet.append(len(img_paths))
 
-            attribute_list = []
-            for img_path in img_paths:
-                attribute_list.append(imgdir2attribute[img_path])
-
-            tracklets.append((img_paths, pid, camid, clothes_id, attribute_list))
+            tracklets.append((img_paths, pid, camid, clothes_id, imgdir2attribute[tracklet_path]))
 
         num_tracklets = len(tracklets)
 
