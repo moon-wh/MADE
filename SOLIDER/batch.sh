@@ -19,9 +19,7 @@ cd /home/sriniana/projects/MADE/SOLIDER
 CONDA_BASE=$(conda info --base) ;
 source $CONDA_BASE/etc/profile.d/conda.sh
 conda activate solider
-
-
-DATASET_PATH=/home/c3-0/datasets/casia-b/DatasetB_crops_v5/    
+   
 NUM_GPU=1
 GPUS=0
 PORT=12346
