@@ -28,4 +28,4 @@ PORT=12346
 
 # CUDA_VISIBLE_DEVICES=$GPUS python -m torch.distributed.launch --nproc_per_node=$NUM_GPU --master_port=$PORT train.py --cfg ./configs/peta_zs.yaml
 
-CUDA_VISIBLE_DEVICES=$GPUS python demo_PETA_prcc.py
+CUDA_VISIBLE_DEVICES=$GPUS python demo_PETA_ccvid.py
