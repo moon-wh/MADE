@@ -73,11 +73,11 @@ _C.DATA.IMG_WIDTH = 224
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.
 _C.DATA.PIN_MEMORY = True
 # Number of data loading threads
-_C.DATA.NUM_WORKERS = 4
+_C.DATA.NUM_WORKERS = 1
 # Data root
-_C.DATA.ROOT = '../Data'
+_C.DATA.ROOT = '/home/c3-0/datasets/PRCC/'
 # Number of instances
-_C.DATA.NUM_INSTANCES = 2 #8
+_C.DATA.NUM_INSTANCES = 1 #8
 # Batch size during testing
 _C.DATA.TEST_BATCH = 128
 # Data sampling strategy
@@ -85,7 +85,7 @@ _C.DATA.SAMPLER = 'softmax_triplet'
 # Extract data containing attributes during data processing, options: 'True', 'False'
 _C.DATA.AUX_INFO = True
 # Filename containing attributes
-_C.DATA.META_DIR = 'PAR_PETA_105.txt'
+_C.DATA.META_DIR = './SOLIDER/PAR_PETA_105_prcc.txt'
 
 
 # -----------------------------------------------------------------------------

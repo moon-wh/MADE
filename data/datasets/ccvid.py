@@ -166,10 +166,11 @@ class CCVID(object):
                 camid = int(cam) + 12
             else:
                 camid = int(cam)
-
+                
             num_imgs_per_tracklet.append(len(img_paths))
-
-            tracklets.append((img_paths, pid, camid, clothes_id, imgdir2attribute[tracklet_path]))
+            
+            for img_path in img_paths:
+                tracklets.append((img_path, pid, camid, clothes_id, imgdir2attribute[osp.join(self.root, tracklet_path)]))
 
         num_tracklets = len(tracklets)
 
@@ -186,7 +187,7 @@ class CCVID(object):
             new_dataset (list): output dataset
         '''
         new_dataset = []
-        for (img_paths, pid, camid, clothes_id) in dataset:
+        for (img_paths, pid, camid, clothes_id, attributes) in dataset:
             if sampling_step != 0:
                 num_sampling = len(img_paths)//sampling_step
                 if num_sampling == 0:
@@ -198,7 +199,7 @@ class CCVID(object):
                         else:
                             new_dataset.append((img_paths[idx*sampling_step : (idx+1)*sampling_step], pid, camid, clothes_id))
             else:
-                new_dataset.append((img_paths, pid, camid, clothes_id))
+                new_dataset.append((img_paths, pid, camid, clothes_id, attributes))
 
         return new_dataset
 
@@ -216,7 +217,7 @@ class CCVID(object):
         '''
         new_dataset = []
         vid2clip_index = np.zeros((len(dataset), 2), dtype=int)
-        for idx, (img_paths, pid, camid, clothes_id) in enumerate(dataset):
+        for idx, (img_paths, pid, camid, clothes_id, attributes) in enumerate(dataset):
             # start index
             vid2clip_index[idx, 0] = len(new_dataset)
             # process the sequence that can be divisible by seq_len*stride
@@ -247,7 +248,7 @@ class CCVID(object):
                                 break
                             clip_paths.append(index)
                     assert(len(clip_paths) == seq_len)
-                    new_dataset.append((clip_paths, pid, camid, clothes_id))
+                    new_dataset.append((clip_paths, pid, camid, clothes_id, attributes))
             # end index
             vid2clip_index[idx, 1] = len(new_dataset)
             assert((vid2clip_index[idx, 1]-vid2clip_index[idx, 0]) == math.ceil(len(img_paths)/seq_len))

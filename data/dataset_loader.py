@@ -50,6 +50,8 @@ class ImageDataset(Dataset):
             if self.transform is not None:
                 img = self.transform(img)
             return img, pid, camid, clothes_id,cloth_id_batch
+        
+
 
 
 def pil_loader(path):
