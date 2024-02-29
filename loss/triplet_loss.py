@@ -73,21 +73,34 @@ def hard_example_mining(dist_mat, labels, return_inds=False):
     is_pos = labels.expand(N, N).eq(labels.expand(N, N).t())
     is_neg = labels.expand(N, N).ne(labels.expand(N, N).t())
 
+    print("---------------------- hnm_dist_mat", dist_mat.shape)
+    print("---------------------- hnm_labels", labels)
+
     print("---------------------- is_pos",is_pos.shape)
     print("---------------------- is_neg",is_neg.shape)
 
+    print("---------------------- N",N)
+    print("---------------------- dist_mat",dist_mat)
+
+    print("---------------------- masked",dist_mat[is_pos].contiguous())
+
     # `dist_ap` means distance(anchor, positive)
     # both `dist_ap` and `relative_p_inds` with shape [N, 1]
+
+    dist_mat_pos_adjusted = dist_mat.clone()
+    dist_mat_pos_adjusted[~is_pos] = float('-inf')
     dist_ap, relative_p_inds = torch.max(
-        dist_mat[is_pos].contiguous().view(N, -1), 1, keepdim=True)
+        dist_mat_pos_adjusted, 1, keepdim=True)
     
     print("---------------------- dist_ap",dist_ap.shape)
     print("---------------------- relative_p_inds",relative_p_inds.shape)
     # print(dist_mat[is_pos].shape)
     # `dist_an` means distance(anchor, negative)
     # both `dist_an` and `relative_n_inds` with shape [N, 1]
+    dist_mat_neg_adjusted = dist_mat.clone()
+    dist_mat_neg_adjusted[~is_neg] = float('inf')
     dist_an, relative_n_inds = torch.min(
-        dist_mat[is_neg].contiguous().view(N, -1), 1, keepdim=True)
+        dist_mat_neg_adjusted, 1, keepdim=True)
     # shape [N]
     dist_ap = dist_ap.squeeze(1)
     dist_an = dist_an.squeeze(1)

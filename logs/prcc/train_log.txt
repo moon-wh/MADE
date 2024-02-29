@@ -1,0 +1,130 @@
+2024-02-29 16:44:53,656 EVA-attribure INFO: Saving model in the path :../MADE/logs/prcc
+2024-02-29 16:44:53,656 EVA-attribure INFO: Namespace(config_file='configs/prcc/eva02_l_maskmeta_cloth.yml', local_rank=0, opts=['MODEL.DIST_TRAIN', 'True'])
+2024-02-29 16:44:53,656 EVA-attribure INFO: Loaded configuration file configs/prcc/eva02_l_maskmeta_cloth.yml
+2024-02-29 16:44:53,657 EVA-attribure INFO: 
+MODEL:
+  TYPE: eva02_meta_cloth
+  NAME: eva02_meta_cloth_l
+  META_DIMS: [ 105, ]
+  METRIC_LOSS_TYPE: 'triplet'
+  IF_LABELSMOOTH: 'off'
+  IF_WITH_CENTER: 'no'
+  NO_MARGIN: True
+  ADD_META: True
+  MASK_META: True
+
+
+DATA:
+  IMG_HEIGHT: 224
+  IMG_WIDTH: 224
+  DATASET: 'prcc'
+
+
+SOLVER:
+  OPTIMIZER_NAME: 'SGD'
+  MAX_EPOCHS: 60
+  BASE_LR: 2e-5
+  WARMUP_METHOD: 'linear'
+  LARGE_FC_LR: False
+  CHECKPOINT_PERIOD: 60
+  LOG_PERIOD: 50
+  EVAL_PERIOD: 1
+  WEIGHT_DECAY:  0.05
+  WEIGHT_DECAY_BIAS: 0.05
+  BIAS_LR_FACTOR: 2
+
+TEST:
+  WEIGHT: ''
+  FEAT_NORM: 'yes'
+  TYPE: 'image_only'
+OUTPUT_DIR: '../MADE/logs/prcc'
+
+
+
+2024-02-29 16:44:53,657 EVA-attribure INFO: Running with config:
+AUG:
+  RC_PROB: 0.5
+  RE_PROB: 0.5
+  RF_PROB: 0.5
+DATA:
+  AUX_INFO: True
+  BATCH_SIZE: 8
+  DATASET: prcc
+  IMG_HEIGHT: 224
+  IMG_WIDTH: 224
+  META_DIR: ./SOLIDER/PAR_PETA_105_prcc.txt
+  NUM_INSTANCES: 1
+  NUM_WORKERS: 1
+  PIN_MEMORY: True
+  ROOT: /home/c3-0/datasets/PRCC/
+  SAMPLER: softmax_triplet
+  TEST_BATCH: 128
+MODEL:
+  ADD_META: True
+  CLOTH_ONLY: False
+  CLOTH_XISHU: 3
+  COS_LAYER: False
+  DEVICE: cuda
+  DEVICE_ID: 0
+  DIST_TRAIN: True
+  ID_LOSS_TYPE: softmax
+  ID_LOSS_WEIGHT: 1.0
+  IF_LABELSMOOTH: off
+  IF_WITH_CENTER: no
+  MASK_META: True
+  META_DIMS: [105]
+  METRIC_LOSS_TYPE: triplet
+  NAME: eva02_meta_cloth_l
+  NO_MARGIN: True
+  TRIPLET_LOSS_WEIGHT: 1.0
+  TYPE: eva02_meta_cloth
+OUTPUT_DIR: ../MADE/logs/prcc
+SOLVER:
+  BASE_LR: 2e-05
+  BIAS_LR_FACTOR: 2
+  CENTER_LOSS_WEIGHT: 0.0005
+  CENTER_LR: 0.5
+  CHECKPOINT_PERIOD: 60
+  COSINE_MARGIN: 0.5
+  COSINE_SCALE: 30
+  EVAL_PERIOD: 1
+  GAMMA: 0.1
+  LARGE_FC_LR: False
+  LOG_PERIOD: 50
+  MARGIN: 0.3
+  MAX_EPOCHS: 60
+  MOMENTUM: 0.9
+  OPTIMIZER_NAME: SGD
+  SEED: 1234
+  STEPS: (40, 60)
+  WARMUP_EPOCHS: 20
+  WARMUP_FACTOR: 0.01
+  WARMUP_LR: 7.8125e-07
+  WARMUP_METHOD: linear
+  WEIGHT_DECAY: 0.05
+  WEIGHT_DECAY_BIAS: 0.05
+TEST:
+  FEAT_NORM: yes
+  TYPE: image_only
+  WEIGHT: 
+TRAIN:
+  START_EPOCH: 1
+2024-02-29 16:45:11,237 EVA-attribure.train INFO: start training
+2024-02-29 16:45:48,352 EVA-attribure.train INFO: Epoch[1] Iteration[50/2237] Loss: 5.090, Acc: 0.020, Base Lr: 1.74e-06
+2024-02-29 16:46:23,750 EVA-attribure.train INFO: Epoch[1] Iteration[100/2237] Loss: 5.075, Acc: 0.014, Base Lr: 1.74e-06
+2024-02-29 16:46:59,558 EVA-attribure.train INFO: Epoch[1] Iteration[150/2237] Loss: 5.060, Acc: 0.011, Base Lr: 1.74e-06
+2024-02-29 16:47:35,716 EVA-attribure.train INFO: Epoch[1] Iteration[200/2237] Loss: 5.064, Acc: 0.009, Base Lr: 1.74e-06
+2024-02-29 16:48:12,126 EVA-attribure.train INFO: Epoch[1] Iteration[250/2237] Loss: 5.065, Acc: 0.009, Base Lr: 1.74e-06
+2024-02-29 16:48:48,510 EVA-attribure.train INFO: Epoch[1] Iteration[300/2237] Loss: 5.058, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:49:24,936 EVA-attribure.train INFO: Epoch[1] Iteration[350/2237] Loss: 5.056, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:50:01,606 EVA-attribure.train INFO: Epoch[1] Iteration[400/2237] Loss: 5.054, Acc: 0.009, Base Lr: 1.74e-06
+2024-02-29 16:50:38,202 EVA-attribure.train INFO: Epoch[1] Iteration[450/2237] Loss: 5.052, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:51:14,747 EVA-attribure.train INFO: Epoch[1] Iteration[500/2237] Loss: 5.052, Acc: 0.009, Base Lr: 1.74e-06
+2024-02-29 16:51:51,328 EVA-attribure.train INFO: Epoch[1] Iteration[550/2237] Loss: 5.051, Acc: 0.009, Base Lr: 1.74e-06
+2024-02-29 16:52:27,786 EVA-attribure.train INFO: Epoch[1] Iteration[600/2237] Loss: 5.048, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:53:04,301 EVA-attribure.train INFO: Epoch[1] Iteration[650/2237] Loss: 5.047, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:53:40,750 EVA-attribure.train INFO: Epoch[1] Iteration[700/2237] Loss: 5.047, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:54:17,366 EVA-attribure.train INFO: Epoch[1] Iteration[750/2237] Loss: 5.047, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:54:53,933 EVA-attribure.train INFO: Epoch[1] Iteration[800/2237] Loss: 5.046, Acc: 0.011, Base Lr: 1.74e-06
+2024-02-29 16:55:30,479 EVA-attribure.train INFO: Epoch[1] Iteration[850/2237] Loss: 5.044, Acc: 0.010, Base Lr: 1.74e-06
+2024-02-29 16:56:06,943 EVA-attribure.train INFO: Epoch[1] Iteration[900/2237] Loss: 5.044, Acc: 0.011, Base Lr: 1.74e-06
