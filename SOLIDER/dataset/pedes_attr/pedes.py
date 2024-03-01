@@ -6,7 +6,7 @@ import numpy as np
 import torch.utils.data as data
 from PIL import Image
 
-from tools.function import get_pkl_rootpath
+from tools.function import get_pkl_rootpath, return_file_map
 
 
 class PedesAttr(data.Dataset):
@@ -17,6 +17,7 @@ class PedesAttr(data.Dataset):
             f'dataset name {cfg.DATASET.NAME} is not exist'
 
         data_path = get_pkl_rootpath(cfg.DATASET.NAME, cfg.DATASET.ZERO_SHOT)
+        self.file_map = return_file_map(cfg.DATASET.NAME)
 
         print("which pickle", data_path)
 
@@ -79,7 +80,8 @@ class PedesAttr(data.Dataset):
         imgname, gt_label, imgidx = self.img_id[index], self.label[index], self.img_idx[index]
 
         imgpath = os.path.join(self.root_path, imgname)
-        img = Image.open(imgpath)
+        actualimgpath = self.file_map[imgpath]
+        img = Image.open(actualimgpath)
 
         if self.transform is not None:
             img = self.transform(img)

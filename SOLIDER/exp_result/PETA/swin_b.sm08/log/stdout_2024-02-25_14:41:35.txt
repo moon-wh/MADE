@@ -1,0 +1,520 @@
+code save in exp_result/PETA/swin_b.sm08/code_2024-02-25_14:41:35.tar.gz
+use GPUcuda:0 for training
+2 0
+BACKBONE:
+  MULTISCALE: False
+  TYPE: swin_b
+CLASSIFIER:
+  BN: False
+  NAME: linear
+  POOLING: avg
+  SCALE: 1
+  TYPE: base
+DATASET:
+  HEIGHT: 256
+  LABEL: all
+  NAME: PETA
+  TARGETTRANSFORM: []
+  TEST_SPLIT: test
+  TRAIN_SPLIT: trainval
+  TYPE: pedes
+  VAL_SPLIT: test
+  WIDTH: 192
+  ZERO_SHOT: True
+DISTRIBUTTED: False
+INFER:
+  SAMPLING: False
+LOSS:
+  LOSS_WEIGHT: [1]
+  SAMPLE_WEIGHT: weight
+  SIZESUM: True
+  TYPE: bceloss
+METRIC:
+  TYPE: pedestrian
+NAME: .sm08
+REDIRECTOR: True
+RELOAD:
+  NAME: backbone
+  PTH: 
+  TYPE: False
+TRAIN:
+  AUX_LOSS_START: -1
+  BATCH_SIZE: 64
+  BN_WD: True
+  CLIP_GRAD: True
+  DATAAUG:
+    AUTOAUG_PROB: 0.5
+    TYPE: base
+  EMA:
+    DECAY: 0.9998
+    ENABLE: False
+    FORCE_CPU: False
+  LR_SCHEDULER:
+    LR_FT: 1e-05
+    LR_NEW: 1e-05
+    LR_STEP: [10, 15]
+    TYPE: multistep
+    WMUP_COEF: 0.01
+    WMUP_LR_INIT: 1e-06
+  MAX_EPOCH: 30
+  NUM_WORKERS: 4
+  OPTIMIZER:
+    MOMENTUM: 0.9
+    TYPE: adam
+    WEIGHT_DECAY: 0.0005
+  SHUFFLE: True
+TRANS:
+  DEC_LAYERS: 6
+  DIM_FFD: 2048
+  DIM_HIDDEN: 256
+  DROPOUT: 0.1
+  ENC_LAYERS: 6
+  EOS_COEF: 0.1
+  NHEADS: 8
+  NUM_QUERIES: 100
+  PRE_NORM: False
+VIS:
+  CAM: valid
+  TENSORBOARD:
+    ENABLE: True
+  VISDOM: False
+Compose(
+    Resize(size=(256, 192), interpolation=bilinear)
+    Pad(padding=10, fill=0, padding_mode=constant)
+    RandomCrop(size=(256, 192), padding=None)
+    RandomHorizontalFlip(p=0.5)
+    ToTensor()
+    Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+)
+which pickle ./data/PETA/dataset_zs_run0.pkl
+trainval target_label: all
+which pickle ./data/PETA/dataset_zs_run0.pkl
+test target_label: all
+------------------------------------------------------------
+PETA attr_num : 105, eval_attr_num : 35 trainval set: 15067, test set: 3933, 
+Building backbone: swin_b
+Backbone : {'resnet18': <function resnet18 at 0x146a24338c20>, 'resnet34': <function resnet34 at 0x146a24338cb0>, 'resnet50': <function resnet50 at 0x146a24338d40>, 'resnet101': <function resnet101 at 0x146a24338dd0>, 'resnet152': <function resnet152 at 0x146a24338e60>, 'resnext50_32x4d': <function resnext50_32x4d at 0x146a24338ef0>, 'resnext101_32x8d': <function resnext101_32x8d at 0x146a24338f80>, 'swin_b': <function swin_base_patch4_window7_224 at 0x146a19cafb00>, 'swin_s': <function swin_small_patch4_window7_224 at 0x146a19cafb90>, 'swin_t': <function swin_tiny_patch4_window7_224 at 0x146a19cafc20>}
+unloaded parameters: <All keys matched successfully>
+backbone: swin_b, classifier: linear
+model_name: swin_b.sm08
+2024-02-25_14:44:12, Step 49/117 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 52.3286, 
+2024-02-25_14:45:39, Step 99/117 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.42s , train_loss: 46.9859, 
+2024-02-25_14:46:03, Step 116/117 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.42s , train_loss: 45.6256, 
+Epoch 0, LR 1e-05, Train_Time 185.57s, Loss: 45.6256
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 45.62556927020733
+ ma: 0.5420, label_f1: 0.1905, pos_recall: 0.1767 , neg_recall: 0.9073 
+ Acc: 0.4390, Prec: 0.6698, Rec: 0.5479, F1: 0.6027
+Evaluation on test set, valid losses 37.91521047776745
+ ma: 0.5847, label_f1: 0.2556, pos_recall: 0.2521 , neg_recall: 0.9172 
+ Acc: 0.5179, Prec: 0.6936, Rec: 0.6576, F1: 0.6751
+2024-02-25_14:47:43
+------------------------------------------------------------
+2024-02-25_14:49:16, Step 49/117 in Ep 1, LR: [1.0e-05, 1.0e-05] Time: 1.50s , train_loss: 34.1368, 
+2024-02-25_14:50:35, Step 99/117 in Ep 1, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 31.8699, 
+2024-02-25_14:51:00, Step 116/117 in Ep 1, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 31.1026, 
+Epoch 1, LR 1e-05, Train_Time 189.20s, Loss: 31.1026
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 31.102557891454452
+ ma: 0.6548, label_f1: 0.3967, pos_recall: 0.3674 , neg_recall: 0.9421 
+ Acc: 0.6100, Prec: 0.7707, Rec: 0.7261, F1: 0.7477
+Evaluation on test set, valid losses 34.229731498226045
+ ma: 0.6227, label_f1: 0.3209, pos_recall: 0.3174 , neg_recall: 0.9280 
+ Acc: 0.5702, Prec: 0.7311, Rec: 0.7050, F1: 0.7178
+2024-02-25_14:52:33
+------------------------------------------------------------
+2024-02-25_14:54:26, Step 49/117 in Ep 2, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 24.9845, 
+2024-02-25_14:55:57, Step 99/117 in Ep 2, LR: [1.0e-05, 1.0e-05] Time: 1.43s , train_loss: 23.6986, 
+2024-02-25_14:56:23, Step 116/117 in Ep 2, LR: [1.0e-05, 1.0e-05] Time: 1.40s , train_loss: 23.2252, 
+Epoch 2, LR 1e-05, Train_Time 201.14s, Loss: 23.2252
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 23.22519781650641
+ ma: 0.7327, label_f1: 0.5381, pos_recall: 0.5073 , neg_recall: 0.9581 
+ Acc: 0.7171, Prec: 0.8322, Rec: 0.8145, F1: 0.8233
+Evaluation on test set, valid losses 32.9085907167004
+ ma: 0.6502, label_f1: 0.3747, pos_recall: 0.3664 , neg_recall: 0.9339 
+ Acc: 0.5944, Prec: 0.7468, Rec: 0.7263, F1: 0.7364
+2024-02-25_14:58:19
+------------------------------------------------------------
+2024-02-25_15:00:03, Step 49/117 in Ep 3, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 19.4495, 
+2024-02-25_15:01:35, Step 99/117 in Ep 3, LR: [1.0e-05, 1.0e-05] Time: 1.43s , train_loss: 18.7751, 
+2024-02-25_15:02:01, Step 116/117 in Ep 3, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 18.5224, 
+Epoch 3, LR 1e-05, Train_Time 196.59s, Loss: 18.5224
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 18.52239739181649
+ ma: 0.7731, label_f1: 0.6049, pos_recall: 0.5797 , neg_recall: 0.9665 
+ Acc: 0.7732, Prec: 0.8647, Rec: 0.8570, F1: 0.8608
+Evaluation on test set, valid losses 33.51609476151005
+ ma: 0.6619, label_f1: 0.3980, pos_recall: 0.3887 , neg_recall: 0.9352 
+ Acc: 0.6048, Prec: 0.7560, Rec: 0.7325, F1: 0.7440
+2024-02-25_15:03:58
+------------------------------------------------------------
+2024-02-25_15:05:48, Step 49/117 in Ep 4, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 16.2609, 
+2024-02-25_15:07:42, Step 99/117 in Ep 4, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 15.7461, 
+2024-02-25_15:08:12, Step 116/117 in Ep 4, LR: [1.0e-05, 1.0e-05] Time: 1.40s , train_loss: 15.5388, 
+Epoch 4, LR 1e-05, Train_Time 248.42s, Loss: 15.5388
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 15.538770528940054
+ ma: 0.8013, label_f1: 0.6511, pos_recall: 0.6309 , neg_recall: 0.9718 
+ Acc: 0.8071, Prec: 0.8848, Rec: 0.8825, F1: 0.8836
+Evaluation on test set, valid losses 34.2013125881072
+ ma: 0.6715, label_f1: 0.4162, pos_recall: 0.4073 , neg_recall: 0.9357 
+ Acc: 0.6150, Prec: 0.7606, Rec: 0.7434, F1: 0.7519
+2024-02-25_15:11:06
+------------------------------------------------------------
+2024-02-25_15:13:05, Step 49/117 in Ep 5, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 13.9073, 
+2024-02-25_15:15:01, Step 99/117 in Ep 5, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 13.5764, 
+2024-02-25_15:15:44, Step 116/117 in Ep 5, LR: [1.0e-05, 1.0e-05] Time: 2.61s , train_loss: 13.4126, 
+Epoch 5, LR 1e-05, Train_Time 269.06s, Loss: 13.4126
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 13.412629910004444
+ ma: 0.8204, label_f1: 0.6819, pos_recall: 0.6648 , neg_recall: 0.9759 
+ Acc: 0.8320, Prec: 0.9005, Rec: 0.9001, F1: 0.9003
+Evaluation on test set, valid losses 34.79191983130671
+ ma: 0.6777, label_f1: 0.4226, pos_recall: 0.4191 , neg_recall: 0.9363 
+ Acc: 0.6132, Prec: 0.7556, Rec: 0.7445, F1: 0.7500
+2024-02-25_15:16:59
+------------------------------------------------------------
+2024-02-25_15:18:29, Step 49/117 in Ep 6, LR: [1.0e-05, 1.0e-05] Time: 1.43s , train_loss: 12.0105, 
+2024-02-25_15:19:52, Step 99/117 in Ep 6, LR: [1.0e-05, 1.0e-05] Time: 1.46s , train_loss: 11.7550, 
+2024-02-25_15:20:17, Step 116/117 in Ep 6, LR: [1.0e-05, 1.0e-05] Time: 1.43s , train_loss: 11.6009, 
+Epoch 6, LR 1e-05, Train_Time 191.47s, Loss: 11.6009
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 11.600932447319357
+ ma: 0.8391, label_f1: 0.7140, pos_recall: 0.6988 , neg_recall: 0.9793 
+ Acc: 0.8548, Prec: 0.9139, Rec: 0.9165, F1: 0.9152
+Evaluation on test set, valid losses 36.99663906712686
+ ma: 0.6760, label_f1: 0.4251, pos_recall: 0.4143 , neg_recall: 0.9376 
+ Acc: 0.6176, Prec: 0.7650, Rec: 0.7420, F1: 0.7533
+2024-02-25_15:21:44
+------------------------------------------------------------
+2024-02-25_15:23:25, Step 49/117 in Ep 7, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 10.5756, 
+2024-02-25_15:26:00, Step 99/117 in Ep 7, LR: [1.0e-05, 1.0e-05] Time: 3.10s , train_loss: 10.3827, 
+2024-02-25_15:26:29, Step 116/117 in Ep 7, LR: [1.0e-05, 1.0e-05] Time: 1.40s , train_loss: 10.2505, 
+Epoch 7, LR 1e-05, Train_Time 283.99s, Loss: 10.2505
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 10.250464194860214
+ ma: 0.8550, label_f1: 0.7421, pos_recall: 0.7284 , neg_recall: 0.9816 
+ Acc: 0.8706, Prec: 0.9231, Rec: 0.9278, F1: 0.9254
+Evaluation on test set, valid losses 37.81783236226728
+ ma: 0.6759, label_f1: 0.4291, pos_recall: 0.4130 , neg_recall: 0.9388 
+ Acc: 0.6180, Prec: 0.7682, Rec: 0.7391, F1: 0.7534
+2024-02-25_15:28:44
+------------------------------------------------------------
+2024-02-25_15:30:37, Step 49/117 in Ep 8, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 9.3351, 
+2024-02-25_15:32:24, Step 99/117 in Ep 8, LR: [1.0e-05, 1.0e-05] Time: 1.42s , train_loss: 9.1599, 
+2024-02-25_15:33:15, Step 116/117 in Ep 8, LR: [1.0e-05, 1.0e-05] Time: 1.84s , train_loss: 9.0260, 
+Epoch 8, LR 1e-05, Train_Time 265.64s, Loss: 9.0260
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 9.025955795222877
+ ma: 0.8680, label_f1: 0.7674, pos_recall: 0.7520 , neg_recall: 0.9840 
+ Acc: 0.8859, Prec: 0.9329, Rec: 0.9373, F1: 0.9351
+Evaluation on test set, valid losses 39.64772824318178
+ ma: 0.6746, label_f1: 0.4275, pos_recall: 0.4113 , neg_recall: 0.9379 
+ Acc: 0.6168, Prec: 0.7664, Rec: 0.7377, F1: 0.7518
+2024-02-25_15:35:54
+------------------------------------------------------------
+2024-02-25_15:38:26, Step 49/117 in Ep 9, LR: [1.0e-05, 1.0e-05] Time: 2.17s , train_loss: 8.0525, 
+2024-02-25_15:40:32, Step 99/117 in Ep 9, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 7.9317, 
+2024-02-25_15:41:01, Step 116/117 in Ep 9, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 7.8470, 
+Epoch 9, LR 1e-05, Train_Time 302.06s, Loss: 7.8470
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 7.846969441470937
+ ma: 0.8813, label_f1: 0.7903, pos_recall: 0.7759 , neg_recall: 0.9866 
+ Acc: 0.9029, Prec: 0.9429, Rec: 0.9483, F1: 0.9456
+Evaluation on test set, valid losses 41.3424445121519
+ ma: 0.6725, label_f1: 0.4245, pos_recall: 0.4080 , neg_recall: 0.9369 
+ Acc: 0.6147, Prec: 0.7658, Rec: 0.7340, F1: 0.7496
+2024-02-25_15:43:34
+------------------------------------------------------------
+2024-02-25_15:45:39, Step 49/117 in Ep 10, LR: [1.0e-06, 1.0e-06] Time: 1.40s , train_loss: 6.6181, 
+2024-02-25_15:47:14, Step 99/117 in Ep 10, LR: [1.0e-06, 1.0e-06] Time: 1.41s , train_loss: 6.2325, 
+2024-02-25_15:47:55, Step 116/117 in Ep 10, LR: [1.0e-06, 1.0e-06] Time: 1.40s , train_loss: 6.1287, 
+Epoch 10, LR 1.0000000000000002e-06, Train_Time 257.46s, Loss: 6.1287
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 6.128666881822113
+ ma: 0.8970, label_f1: 0.8203, pos_recall: 0.8038 , neg_recall: 0.9902 
+ Acc: 0.9273, Prec: 0.9583, Rec: 0.9619, F1: 0.9601
+Evaluation on test set, valid losses 38.91399968054987
+ ma: 0.6859, label_f1: 0.4498, pos_recall: 0.4312 , neg_recall: 0.9406 
+ Acc: 0.6322, Prec: 0.7776, Rec: 0.7504, F1: 0.7638
+2024-02-25_15:50:11
+------------------------------------------------------------
+2024-02-25_15:51:57, Step 49/117 in Ep 11, LR: [1.0e-06, 1.0e-06] Time: 1.43s , train_loss: 5.8884, 
+2024-02-25_15:53:31, Step 99/117 in Ep 11, LR: [1.0e-06, 1.0e-06] Time: 1.43s , train_loss: 5.7080, 
+2024-02-25_15:54:03, Step 116/117 in Ep 11, LR: [1.0e-06, 1.0e-06] Time: 1.40s , train_loss: 5.6490, 
+Epoch 11, LR 1.0000000000000002e-06, Train_Time 216.26s, Loss: 5.6490
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 5.648999886635022
+ ma: 0.9040, label_f1: 0.8300, pos_recall: 0.8165 , neg_recall: 0.9914 
+ Acc: 0.9354, Prec: 0.9629, Rec: 0.9669, F1: 0.9649
+Evaluation on test set, valid losses 39.070702860432284
+ ma: 0.6869, label_f1: 0.4516, pos_recall: 0.4335 , neg_recall: 0.9402 
+ Acc: 0.6315, Prec: 0.7764, Rec: 0.7502, F1: 0.7631
+2024-02-25_15:56:18
+------------------------------------------------------------
+2024-02-25_15:58:11, Step 49/117 in Ep 12, LR: [1.0e-06, 1.0e-06] Time: 1.41s , train_loss: 5.6039, 
+2024-02-25_16:00:06, Step 99/117 in Ep 12, LR: [1.0e-06, 1.0e-06] Time: 1.43s , train_loss: 5.4406, 
+2024-02-25_16:00:49, Step 116/117 in Ep 12, LR: [1.0e-06, 1.0e-06] Time: 1.43s , train_loss: 5.3921, 
+Epoch 12, LR 1.0000000000000002e-06, Train_Time 256.99s, Loss: 5.3921
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 5.392109385922423
+ ma: 0.9073, label_f1: 0.8362, pos_recall: 0.8227 , neg_recall: 0.9920 
+ Acc: 0.9393, Prec: 0.9650, Rec: 0.9690, F1: 0.9670
+Evaluation on test set, valid losses 39.487593035544116
+ ma: 0.6853, label_f1: 0.4499, pos_recall: 0.4302 , neg_recall: 0.9404 
+ Acc: 0.6325, Prec: 0.7777, Rec: 0.7506, F1: 0.7639
+2024-02-25_16:03:07
+------------------------------------------------------------
+2024-02-25_16:05:01, Step 49/117 in Ep 13, LR: [1.0e-06, 1.0e-06] Time: 1.41s , train_loss: 5.3669, 
+2024-02-25_16:06:49, Step 99/117 in Ep 13, LR: [1.0e-06, 1.0e-06] Time: 1.41s , train_loss: 5.2371, 
+2024-02-25_16:07:26, Step 116/117 in Ep 13, LR: [1.0e-06, 1.0e-06] Time: 1.40s , train_loss: 5.1912, 
+Epoch 13, LR 1.0000000000000002e-06, Train_Time 255.84s, Loss: 5.1912
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 5.191164481334197
+ ma: 0.9128, label_f1: 0.8453, pos_recall: 0.8333 , neg_recall: 0.9923 
+ Acc: 0.9426, Prec: 0.9667, Rec: 0.9712, F1: 0.9689
+Evaluation on test set, valid losses 39.639389130377
+ ma: 0.6858, label_f1: 0.4508, pos_recall: 0.4313 , neg_recall: 0.9403 
+ Acc: 0.6319, Prec: 0.7772, Rec: 0.7500, F1: 0.7634
+2024-02-25_16:09:34
+------------------------------------------------------------
+2024-02-25_16:11:24, Step 49/117 in Ep 14, LR: [1.0e-06, 1.0e-06] Time: 1.42s , train_loss: 5.1568, 
+2024-02-25_16:13:25, Step 99/117 in Ep 14, LR: [1.0e-06, 1.0e-06] Time: 1.41s , train_loss: 5.0377, 
+2024-02-25_16:14:14, Step 116/117 in Ep 14, LR: [1.0e-06, 1.0e-06] Time: 1.41s , train_loss: 5.0009, 
+Epoch 14, LR 1.0000000000000002e-06, Train_Time 276.49s, Loss: 5.0009
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 5.000911608720437
+ ma: 0.9104, label_f1: 0.8405, pos_recall: 0.8279 , neg_recall: 0.9928 
+ Acc: 0.9456, Prec: 0.9687, Rec: 0.9725, F1: 0.9706
+Evaluation on test set, valid losses 39.82626921130765
+ ma: 0.6879, label_f1: 0.4545, pos_recall: 0.4354 , neg_recall: 0.9404 
+ Acc: 0.6318, Prec: 0.7770, Rec: 0.7502, F1: 0.7634
+2024-02-25_16:16:50
+------------------------------------------------------------
+2024-02-25_16:19:32, Step 49/117 in Ep 15, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.9621, 
+2024-02-25_16:21:55, Step 99/117 in Ep 15, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.8066, 
+2024-02-25_16:22:47, Step 116/117 in Ep 15, LR: [1.0e-07, 1.0e-07] Time: 1.39s , train_loss: 4.7576, 
+Epoch 15, LR 1.0000000000000002e-07, Train_Time 332.94s, Loss: 4.7576
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.757646312061538
+ ma: 0.9150, label_f1: 0.8494, pos_recall: 0.8366 , neg_recall: 0.9934 
+ Acc: 0.9495, Prec: 0.9708, Rec: 0.9749, F1: 0.9728
+Evaluation on test set, valid losses 40.29237562610257
+ ma: 0.6848, label_f1: 0.4514, pos_recall: 0.4290 , neg_recall: 0.9406 
+ Acc: 0.6317, Prec: 0.7791, Rec: 0.7475, F1: 0.7630
+2024-02-25_16:25:51
+------------------------------------------------------------
+2024-02-25_16:28:03, Step 49/117 in Ep 16, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.8962, 
+2024-02-25_16:30:43, Step 99/117 in Ep 16, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.7648, 
+2024-02-25_16:31:37, Step 116/117 in Ep 16, LR: [1.0e-07, 1.0e-07] Time: 1.84s , train_loss: 4.7279, 
+Epoch 16, LR 1.0000000000000002e-07, Train_Time 340.09s, Loss: 4.7279
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.7279480746668625
+ ma: 0.9173, label_f1: 0.8570, pos_recall: 0.8412 , neg_recall: 0.9934 
+ Acc: 0.9502, Prec: 0.9713, Rec: 0.9754, F1: 0.9733
+Evaluation on test set, valid losses 40.28264614843553
+ ma: 0.6852, label_f1: 0.4522, pos_recall: 0.4296 , neg_recall: 0.9407 
+ Acc: 0.6320, Prec: 0.7793, Rec: 0.7478, F1: 0.7632
+2024-02-25_16:34:37
+------------------------------------------------------------
+2024-02-25_16:36:56, Step 49/117 in Ep 17, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.8281, 
+2024-02-25_16:39:09, Step 99/117 in Ep 17, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.7088, 
+2024-02-25_16:40:04, Step 116/117 in Ep 17, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6816, 
+Epoch 17, LR 1.0000000000000002e-07, Train_Time 321.92s, Loss: 4.6816
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.681555984366653
+ ma: 0.9174, label_f1: 0.8554, pos_recall: 0.8414 , neg_recall: 0.9935 
+ Acc: 0.9514, Prec: 0.9716, Rec: 0.9764, F1: 0.9740
+Evaluation on test set, valid losses 40.356374156090524
+ ma: 0.6846, label_f1: 0.4511, pos_recall: 0.4285 , neg_recall: 0.9406 
+ Acc: 0.6316, Prec: 0.7793, Rec: 0.7473, F1: 0.7630
+2024-02-25_16:43:18
+------------------------------------------------------------
+2024-02-25_16:45:45, Step 49/117 in Ep 18, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.8144, 
+2024-02-25_16:48:09, Step 99/117 in Ep 18, LR: [1.0e-07, 1.0e-07] Time: 1.42s , train_loss: 4.7043, 
+2024-02-25_16:48:39, Step 116/117 in Ep 18, LR: [1.0e-07, 1.0e-07] Time: 1.42s , train_loss: 4.6685, 
+Epoch 18, LR 1.0000000000000002e-07, Train_Time 315.39s, Loss: 4.6685
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.668536762905936
+ ma: 0.9156, label_f1: 0.8526, pos_recall: 0.8376 , neg_recall: 0.9935 
+ Acc: 0.9515, Prec: 0.9720, Rec: 0.9761, F1: 0.9740
+Evaluation on test set, valid losses 40.40407205397083
+ ma: 0.6846, label_f1: 0.4512, pos_recall: 0.4286 , neg_recall: 0.9406 
+ Acc: 0.6312, Prec: 0.7787, Rec: 0.7472, F1: 0.7626
+2024-02-25_16:51:34
+------------------------------------------------------------
+2024-02-25_16:53:53, Step 49/117 in Ep 19, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.7935, 
+2024-02-25_16:55:49, Step 99/117 in Ep 19, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6844, 
+2024-02-25_16:56:39, Step 116/117 in Ep 19, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6510, 
+Epoch 19, LR 1.0000000000000002e-07, Train_Time 298.84s, Loss: 4.6510
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.650979490361662
+ ma: 0.9171, label_f1: 0.8539, pos_recall: 0.8406 , neg_recall: 0.9936 
+ Acc: 0.9522, Prec: 0.9723, Rec: 0.9766, F1: 0.9744
+Evaluation on test set, valid losses 40.406684167923466
+ ma: 0.6848, label_f1: 0.4514, pos_recall: 0.4288 , neg_recall: 0.9407 
+ Acc: 0.6314, Prec: 0.7790, Rec: 0.7472, F1: 0.7628
+2024-02-25_16:59:20
+------------------------------------------------------------
+2024-02-25_17:01:28, Step 49/117 in Ep 20, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.7725, 
+2024-02-25_17:03:34, Step 99/117 in Ep 20, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6633, 
+2024-02-25_17:04:21, Step 116/117 in Ep 20, LR: [1.0e-07, 1.0e-07] Time: 1.42s , train_loss: 4.6256, 
+Epoch 20, LR 1.0000000000000002e-07, Train_Time 295.35s, Loss: 4.6256
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.625592184881879
+ ma: 0.9167, label_f1: 0.8550, pos_recall: 0.8399 , neg_recall: 0.9935 
+ Acc: 0.9521, Prec: 0.9719, Rec: 0.9769, F1: 0.9744
+Evaluation on test set, valid losses 40.4519445665421
+ ma: 0.6851, label_f1: 0.4521, pos_recall: 0.4296 , neg_recall: 0.9406 
+ Acc: 0.6314, Prec: 0.7788, Rec: 0.7475, F1: 0.7628
+2024-02-25_17:06:46
+------------------------------------------------------------
+2024-02-25_17:08:48, Step 49/117 in Ep 21, LR: [1.0e-07, 1.0e-07] Time: 1.69s , train_loss: 4.7398, 
+2024-02-25_17:10:52, Step 99/117 in Ep 21, LR: [1.0e-07, 1.0e-07] Time: 1.59s , train_loss: 4.6468, 
+2024-02-25_17:11:41, Step 116/117 in Ep 21, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6180, 
+Epoch 21, LR 1.0000000000000002e-07, Train_Time 289.49s, Loss: 4.6180
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.618012285640097
+ ma: 0.9173, label_f1: 0.8540, pos_recall: 0.8409 , neg_recall: 0.9938 
+ Acc: 0.9525, Prec: 0.9726, Rec: 0.9766, F1: 0.9746
+Evaluation on test set, valid losses 40.47001041904573
+ ma: 0.6847, label_f1: 0.4514, pos_recall: 0.4288 , neg_recall: 0.9407 
+ Acc: 0.6313, Prec: 0.7790, Rec: 0.7471, F1: 0.7627
+2024-02-25_17:14:23
+------------------------------------------------------------
+2024-02-25_17:16:28, Step 49/117 in Ep 22, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.7239, 
+2024-02-25_17:18:29, Step 99/117 in Ep 22, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6205, 
+2024-02-25_17:19:12, Step 116/117 in Ep 22, LR: [1.0e-07, 1.0e-07] Time: 1.48s , train_loss: 4.5877, 
+Epoch 22, LR 1.0000000000000002e-07, Train_Time 283.06s, Loss: 4.5877
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.58770932091607
+ ma: 0.9188, label_f1: 0.8598, pos_recall: 0.8438 , neg_recall: 0.9938 
+ Acc: 0.9534, Prec: 0.9730, Rec: 0.9771, F1: 0.9750
+Evaluation on test set, valid losses 40.53744762174545
+ ma: 0.6846, label_f1: 0.4514, pos_recall: 0.4286 , neg_recall: 0.9405 
+ Acc: 0.6313, Prec: 0.7789, Rec: 0.7472, F1: 0.7627
+2024-02-25_17:22:00
+------------------------------------------------------------
+2024-02-25_17:24:13, Step 49/117 in Ep 23, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.7323, 
+2024-02-25_17:26:24, Step 99/117 in Ep 23, LR: [1.0e-07, 1.0e-07] Time: 3.28s , train_loss: 4.6281, 
+2024-02-25_17:27:14, Step 116/117 in Ep 23, LR: [1.0e-07, 1.0e-07] Time: 1.39s , train_loss: 4.6021, 
+Epoch 23, LR 1.0000000000000002e-07, Train_Time 307.05s, Loss: 4.6021
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.602145712599795
+ ma: 0.9183, label_f1: 0.8579, pos_recall: 0.8431 , neg_recall: 0.9935 
+ Acc: 0.9517, Prec: 0.9717, Rec: 0.9766, F1: 0.9741
+Evaluation on test set, valid losses 40.50902634282266
+ ma: 0.6849, label_f1: 0.4516, pos_recall: 0.4293 , neg_recall: 0.9405 
+ Acc: 0.6309, Prec: 0.7786, Rec: 0.7470, F1: 0.7625
+2024-02-25_17:30:10
+------------------------------------------------------------
+2024-02-25_17:32:20, Step 49/117 in Ep 24, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6725, 
+2024-02-25_17:34:32, Step 99/117 in Ep 24, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.5811, 
+2024-02-25_17:35:19, Step 116/117 in Ep 24, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.5543, 
+Epoch 24, LR 1.0000000000000002e-07, Train_Time 302.48s, Loss: 4.5543
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.5543426529974
+ ma: 0.9185, label_f1: 0.8571, pos_recall: 0.8433 , neg_recall: 0.9937 
+ Acc: 0.9529, Prec: 0.9726, Rec: 0.9771, F1: 0.9749
+Evaluation on test set, valid losses 40.56354375039378
+ ma: 0.6845, label_f1: 0.4515, pos_recall: 0.4284 , neg_recall: 0.9405 
+ Acc: 0.6310, Prec: 0.7790, Rec: 0.7468, F1: 0.7626
+2024-02-25_17:37:46
+------------------------------------------------------------
+2024-02-25_17:39:33, Step 49/117 in Ep 25, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.6645, 
+2024-02-25_17:41:22, Step 99/117 in Ep 25, LR: [1.0e-07, 1.0e-07] Time: 1.42s , train_loss: 4.5674, 
+2024-02-25_17:41:53, Step 116/117 in Ep 25, LR: [1.0e-07, 1.0e-07] Time: 1.81s , train_loss: 4.5382, 
+Epoch 25, LR 1.0000000000000002e-07, Train_Time 236.50s, Loss: 4.5382
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.538178543759208
+ ma: 0.9201, label_f1: 0.8600, pos_recall: 0.8462 , neg_recall: 0.9939 
+ Acc: 0.9537, Prec: 0.9735, Rec: 0.9769, F1: 0.9752
+Evaluation on test set, valid losses 40.589448282795566
+ ma: 0.6849, label_f1: 0.4516, pos_recall: 0.4292 , neg_recall: 0.9405 
+ Acc: 0.6312, Prec: 0.7790, Rec: 0.7470, F1: 0.7627
+2024-02-25_17:44:25
+------------------------------------------------------------
+2024-02-25_17:46:24, Step 49/117 in Ep 26, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.6120, 
+2024-02-25_17:48:08, Step 99/117 in Ep 26, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.5362, 
+2024-02-25_17:48:43, Step 116/117 in Ep 26, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.5071, 
+Epoch 26, LR 1.0000000000000002e-07, Train_Time 251.59s, Loss: 4.5071
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.507093032201131
+ ma: 0.9180, label_f1: 0.8558, pos_recall: 0.8421 , neg_recall: 0.9939 
+ Acc: 0.9542, Prec: 0.9734, Rec: 0.9777, F1: 0.9755
+Evaluation on test set, valid losses 40.66255151071856
+ ma: 0.6853, label_f1: 0.4534, pos_recall: 0.4301 , neg_recall: 0.9405 
+ Acc: 0.6312, Prec: 0.7791, Rec: 0.7470, F1: 0.7627
+2024-02-25_17:51:20
+------------------------------------------------------------
+2024-02-25_17:53:08, Step 49/117 in Ep 27, LR: [1.0e-07, 1.0e-07] Time: 1.39s , train_loss: 4.6483, 
+2024-02-25_17:54:55, Step 99/117 in Ep 27, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.5544, 
+2024-02-25_17:55:47, Step 116/117 in Ep 27, LR: [1.0e-07, 1.0e-07] Time: 1.39s , train_loss: 4.5212, 
+Epoch 27, LR 1.0000000000000002e-07, Train_Time 260.05s, Loss: 4.5212
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.5211528325692205
+ ma: 0.9183, label_f1: 0.8561, pos_recall: 0.8428 , neg_recall: 0.9938 
+ Acc: 0.9532, Prec: 0.9728, Rec: 0.9770, F1: 0.9749
+Evaluation on test set, valid losses 40.64136219024658
+ ma: 0.6857, label_f1: 0.4538, pos_recall: 0.4308 , neg_recall: 0.9405 
+ Acc: 0.6309, Prec: 0.7788, Rec: 0.7467, F1: 0.7624
+2024-02-25_17:58:23
+------------------------------------------------------------
+2024-02-25_18:00:33, Step 49/117 in Ep 28, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.6204, 
+2024-02-25_18:02:21, Step 99/117 in Ep 28, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.5171, 
+2024-02-25_18:03:10, Step 116/117 in Ep 28, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.4903, 
+Epoch 28, LR 1.0000000000000002e-07, Train_Time 279.74s, Loss: 4.4903
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.490318848536565
+ ma: 0.9204, label_f1: 0.8615, pos_recall: 0.8469 , neg_recall: 0.9939 
+ Acc: 0.9539, Prec: 0.9734, Rec: 0.9773, F1: 0.9754
+Evaluation on test set, valid losses 40.63292186490951
+ ma: 0.6857, label_f1: 0.4538, pos_recall: 0.4308 , neg_recall: 0.9406 
+ Acc: 0.6308, Prec: 0.7787, Rec: 0.7468, F1: 0.7624
+2024-02-25_18:05:58
+------------------------------------------------------------
+2024-02-25_18:08:01, Step 49/117 in Ep 29, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.5934, 
+2024-02-25_18:10:10, Step 99/117 in Ep 29, LR: [1.0e-07, 1.0e-07] Time: 1.41s , train_loss: 4.5039, 
+2024-02-25_18:11:03, Step 116/117 in Ep 29, LR: [1.0e-07, 1.0e-07] Time: 1.40s , train_loss: 4.4702, 
+Epoch 29, LR 1.0000000000000002e-07, Train_Time 297.95s, Loss: 4.4702
+Distributing BatchNorm running means and vars
+['0.0000']
+Evaluation on train set, train losses 4.470217252388979
+ ma: 0.9210, label_f1: 0.8626, pos_recall: 0.8479 , neg_recall: 0.9941 
+ Acc: 0.9547, Prec: 0.9738, Rec: 0.9780, F1: 0.9759
+Evaluation on test set, valid losses 40.67450874082504
+ ma: 0.6857, label_f1: 0.4539, pos_recall: 0.4308 , neg_recall: 0.9406 
+ Acc: 0.6306, Prec: 0.7786, Rec: 0.7465, F1: 0.7622
+2024-02-25_18:13:43
+------------------------------------------------------------
+.sm08,  best_metrc : 0.68788020339909 in epoch14

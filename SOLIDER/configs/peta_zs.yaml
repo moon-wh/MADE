@@ -1,4 +1,4 @@
-NAME: '.sm08'
+NAME: 'swin_b.sm08'
 
 DATASET:
   TYPE: 'pedes'

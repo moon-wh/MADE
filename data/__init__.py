@@ -6,6 +6,7 @@ from data.datasets.ltcc import LTCC
 from data.datasets.prcc import PRCC
 from data.datasets.Celeb_light import Celeb_light
 from data.datasets.last import LaST
+from data.datasets.ccvid import CCVID
 from torch.utils.data import ConcatDataset, DataLoader
 
 
@@ -14,6 +15,7 @@ __factory = {
     'prcc': PRCC,
     'celeb_light': Celeb_light,
     'last': LaST,
+    'ccvid': CCVID
 }
 
 

@@ -102,7 +102,7 @@ class PRCC(object):
                 else:
                     clothes_container.add(osp.basename(pdir)+osp.basename(img_dir)[0])
         imgdir2attribute = {}
-        with open(os.path.join(self.dataset_dir, self.meta_dir), 'r') as f:
+        with open(os.path.join(self.meta_dir), 'r') as f:
             for line in f:
                 imgdir, attribute_id, is_present = line.split()
                 if imgdir not in imgdir2attribute:
@@ -160,7 +160,7 @@ class PRCC(object):
         pid2label = {pid:label for label, pid in enumerate(pid_container)}
         cam2label = {'A': 0, 'B': 1, 'C': 2}
         imgdir2attribute = {}
-        with open(os.path.join(self.dataset_dir, self.meta_dir), 'r') as f:
+        with open(os.path.join(self.meta_dir), 'r') as f:
             for line in f:
                 imgdir, attribute_id, is_present = line.split()
                 if imgdir not in imgdir2attribute:

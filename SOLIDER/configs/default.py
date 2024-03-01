@@ -106,7 +106,6 @@ _C.VIS.TENSORBOARD.ENABLE = True
 
 _C.VIS.VISDOM = False
 
-
 # ----------- Transformer -------------
 _C.TRANS = CN()
 _C.TRANS.DIM_HIDDEN = 256

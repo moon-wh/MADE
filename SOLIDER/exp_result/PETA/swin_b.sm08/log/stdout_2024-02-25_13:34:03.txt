@@ -1,0 +1,112 @@
+code save in exp_result/PETA/swin_b.sm08/code_2024-02-25_13:34:03.tar.gz
+BACKBONE:
+  MULTISCALE: False
+  TYPE: swin_b
+CLASSIFIER:
+  BN: False
+  NAME: linear
+  POOLING: avg
+  SCALE: 1
+  TYPE: base
+DATASET:
+  HEIGHT: 256
+  LABEL: all
+  NAME: PETA
+  TARGETTRANSFORM: []
+  TEST_SPLIT: test
+  TRAIN_SPLIT: trainval
+  TYPE: pedes
+  VAL_SPLIT: test
+  WIDTH: 192
+  ZERO_SHOT: True
+DISTRIBUTTED: False
+INFER:
+  SAMPLING: False
+LOSS:
+  LOSS_WEIGHT: [1]
+  SAMPLE_WEIGHT: weight
+  SIZESUM: True
+  TYPE: bceloss
+METRIC:
+  TYPE: pedestrian
+NAME: .sm08
+REDIRECTOR: True
+RELOAD:
+  NAME: backbone
+  PTH: 
+  TYPE: False
+TRAIN:
+  AUX_LOSS_START: -1
+  BATCH_SIZE: 64
+  BN_WD: True
+  CLIP_GRAD: True
+  DATAAUG:
+    AUTOAUG_PROB: 0.5
+    TYPE: base
+  EMA:
+    DECAY: 0.9998
+    ENABLE: False
+    FORCE_CPU: False
+  LR_SCHEDULER:
+    LR_FT: 1e-05
+    LR_NEW: 1e-05
+    LR_STEP: [10, 15]
+    TYPE: multistep
+    WMUP_COEF: 0.01
+    WMUP_LR_INIT: 1e-06
+  MAX_EPOCH: 30
+  NUM_WORKERS: 4
+  OPTIMIZER:
+    MOMENTUM: 0.9
+    TYPE: adam
+    WEIGHT_DECAY: 0.0005
+  SHUFFLE: True
+TRANS:
+  DEC_LAYERS: 6
+  DIM_FFD: 2048
+  DIM_HIDDEN: 256
+  DROPOUT: 0.1
+  ENC_LAYERS: 6
+  EOS_COEF: 0.1
+  NHEADS: 8
+  NUM_QUERIES: 100
+  PRE_NORM: False
+VIS:
+  CAM: valid
+  TENSORBOARD:
+    ENABLE: True
+  VISDOM: False
+Compose(
+    Resize(size=(256, 192), interpolation=bilinear)
+    Pad(padding=10, fill=0, padding_mode=constant)
+    RandomCrop(size=(256, 192), padding=None)
+    RandomHorizontalFlip(p=0.5)
+    ToTensor()
+    Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+)
+which pickle ./data/PETA/dataset_zs_run0.pkl
+trainval target_label: all
+which pickle ./data/PETA/dataset_zs_run0.pkl
+test target_label: all
+------------------------------------------------------------
+PETA attr_num : 105, eval_attr_num : 35 trainval set: 15067, test set: 3933, 
+Building backbone: swin_b
+Backbone : {'resnet18': <function resnet18 at 0x1454f4236c20>, 'resnet34': <function resnet34 at 0x1454f4236cb0>, 'resnet50': <function resnet50 at 0x1454f4236d40>, 'resnet101': <function resnet101 at 0x1454f4236dd0>, 'resnet152': <function resnet152 at 0x1454f4236e60>, 'resnext50_32x4d': <function resnext50_32x4d at 0x1454f4236ef0>, 'resnext101_32x8d': <function resnext101_32x8d at 0x1454f4236f80>, 'swin_b': <function swin_base_patch4_window7_224 at 0x1454e9babb00>, 'swin_s': <function swin_small_patch4_window7_224 at 0x1454e9babb90>, 'swin_t': <function swin_tiny_patch4_window7_224 at 0x1454e9babc20>}
+unloaded parameters: <All keys matched successfully>
+backbone: swin_b, classifier: linear
+model_name: swin_b.sm08
+2024-02-25_13:36:10, Step 49/235 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.42s , train_loss: 51.7629, 
+2024-02-25_13:37:21, Step 99/235 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.41s , train_loss: 46.1198, 
+2024-02-25_13:38:32, Step 149/235 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.42s , train_loss: 42.1425, 
+2024-02-25_13:39:42, Step 199/235 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.39s , train_loss: 39.1871, 
+2024-02-25_13:40:31, Step 234/235 in Ep 0, LR: [1.0e-05, 1.0e-05] Time: 1.38s , train_loss: 37.5485, 
+Epoch 0, LR 1e-05, Train_Time 336.05s, Loss: 37.5485
+['0.0000']
+Evaluation on train set, train losses 37.548483463043866
+ ma: 0.6059, label_f1: 0.3103, pos_recall: 0.2852 , neg_recall: 0.9266 
+ Acc: 0.5408, Prec: 0.7297, Rec: 0.6549, F1: 0.6903
+Evaluation on test set, valid losses 32.96050680837324
+ ma: 0.6402, label_f1: 0.3497, pos_recall: 0.3466 , neg_recall: 0.9338 
+ Acc: 0.5726, Prec: 0.7372, Rec: 0.7040, F1: 0.7202
+2024-02-25_13:41:04
+------------------------------------------------------------

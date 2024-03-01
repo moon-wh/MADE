@@ -50,6 +50,8 @@ def get_model_log_path(root_path, model_name):
     multi_attr_log_dir = os.path.join(root_path, model_name, 'log')
     may_mkdirs(multi_attr_log_dir)
 
+    print("--------------- Root :", model_name)
+
     return multi_attr_model_dir, multi_attr_log_dir
 
 
@@ -103,6 +105,18 @@ def get_pkl_rootpath(dataset, zero_shot):
 
     return data_path
 
+def return_file_map(dataset):
+    root = os.path.join("./data", f"{dataset}")
+    filepath = os.path.join(root, 'file_map.txt')
+    f = open(filepath, 'r')
+    lines = f.readlines()
+    lines = [x.strip() for x in lines]
+    f.close()
+    file_map = {}
+    for i in range(len(lines)):
+        value, key = lines[i].split(',')
+        file_map[key] = value
+    return file_map
 
 def get_reload_weight(model_path, model, pth='ckpt_max.pth'):
     model_path = os.path.join(model_path, pth)
@@ -115,5 +129,4 @@ def get_reload_weight(model_path, model, pth='ckpt_max.pth'):
         print(f"best performance {load_dict['metric']} in epoch : {load_dict['epoch']}")
 
     model.load_state_dict(pretrain_dict, strict=True)
-
     return model

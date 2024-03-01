@@ -79,7 +79,9 @@ def do_train(cfg,
         model.train()
         for idx, data in enumerate(train_loader):
             if cfg.MODEL.ADD_META:
+                print("--------- here")
                 samples, targets, camids, _,clothes, meta = data
+                print("--------- meta",meta.shape)
                 meta = [m.float() for m in meta]
                 meta = torch.stack(meta, dim=0)
                 meta = meta.cuda(non_blocking=True)
@@ -99,6 +101,9 @@ def do_train(cfg,
             samples = samples.cuda(non_blocking=True)
             targets = targets.cuda(non_blocking=True)
             clothes = clothes.cuda(non_blocking=True)
+            print("--------- samples",samples.shape)
+            print("--------- clothes",clothes.shape)
+            print("--------- targets",targets.shape)
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             with amp.autocast(enabled=True):
@@ -110,7 +115,12 @@ def do_train(cfg,
 
                 else:
                     score, feat = model(samples)
+            print("--------- score",score.shape)
+            print("--------- feat",feat.shape)
+            print("--------- camids",camids.shape)
             loss = loss_fn(score, feat, targets, camids)
+            print("--------- loss",loss.item())
+            print("#############################\n")
             train_writer.add_scalar('loss', loss.item(), epoch)
             scaler.scale(loss).backward()
 
