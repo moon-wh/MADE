@@ -24,7 +24,7 @@ The *official* repository for  [Masked Attribute Description Embedding for Cloth
 ### Prepare Datasets
 
 
-Download the cloth-changing person Re-ID datasets, [PRCC](http://www.isee-ai.cn/%7Eyangqize/clothing.html), [LTCC](https://naiq.github.io/LTCC_Perosn_ReID.html), [Celeb-reID-light](https://github.com/Huang-3/Celeb-reID) and [LaST](https://github.com/shuxjweb/last.git). Then add attributes file(get from [SOLIDER](/data/PycharmProjects/MADE/SOLIDER/README.md)) in each dataset file. 
+Download the cloth-changing person Re-ID datasets, [PRCC](http://www.isee-ai.cn/%7Eyangqize/clothing.html), [LTCC](https://naiq.github.io/LTCC_Perosn_ReID.html), [Celeb-reID-light](https://github.com/Huang-3/Celeb-reID) and [LaST](https://github.com/shuxjweb/last.git). Then add attributes file(Get from [SOLIDER](/data/PycharmProjects/MADE/SOLIDER/README.md). Or download attributes files([PRCC](https://drive.google.com/file/d/1qvQXd9r-IbYivczoR3vzHEcqM2AxVPLr/view?usp=sharing), [LTCC](https://drive.google.com/file/d/1uY0zUlpk7dAGZcblCUIyorRYY2c-ZPF1/view?usp=sharing), [Celeb-reID-light](https://drive.google.com/file/d/1dyn2OyOkkNCkA8VnIUVV4E4d3BhfemXq/view?usp=sharing), [LaST](https://drive.google.com/file/d/1TEqb5SdwQ0AVh13bNeJY1_RgZ7FYpCz4/view?usp=sharing))) in each dataset file. 
 
 
 ```
@@ -32,7 +32,7 @@ Data
 ├── PRCC
 │   └── rgb ..
 │   └── sketch ..
-│   └── PAR_PETA_105.txt 
+│   └── PAR_PETA_105.txt
 ├── LTCC
 │   └── train ..
 │   └── query ..
