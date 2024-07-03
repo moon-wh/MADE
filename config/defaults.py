@@ -75,7 +75,7 @@ _C.DATA.PIN_MEMORY = True
 # Number of data loading threads
 _C.DATA.NUM_WORKERS = 4
 # Data root
-_C.DATA.ROOT = '../Data'
+_C.DATA.ROOT = '/data/Data/ReIDData'
 # Number of instances
 _C.DATA.NUM_INSTANCES = 2 #8
 # Batch size during testing
@@ -86,6 +86,8 @@ _C.DATA.SAMPLER = 'softmax_triplet'
 _C.DATA.AUX_INFO = True
 # Filename containing attributes
 _C.DATA.META_DIR = 'PAR_PETA_105.txt'
+_C.DATA.RANDOM_NOISE = False
+_C.DATA.RANDOM_PROP = 0.05
 
 
 # -----------------------------------------------------------------------------

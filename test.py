@@ -62,7 +62,7 @@ if __name__ == "__main__":
     else:
         trainloader, queryloader, galleryloader, dataset, train_sampler ,val_loader= build_dataloader(cfg)
 
-    model = build_model(cfg,dataset.num_train_pids,dataset.num_train_clothes)
+    model = build_model(cfg,dataset.num_train_pids)
     model.load_param(cfg.TEST.WEIGHT)
 
     if cfg.DATA.DATASET == 'prcc':

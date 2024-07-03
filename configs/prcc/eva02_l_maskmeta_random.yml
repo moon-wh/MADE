@@ -1,17 +1,20 @@
 MODEL:
-  TYPE: eva02_meta_cloth
-  NAME: eva02_meta_cloth_l
+  TYPE: eva02_meta
+  NAME: eva02_l_meta
   META_DIMS: [ 105, ]
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
   NO_MARGIN: True
+  DEVICE_ID: ('6')
   ADD_META: True
+  MASK_META: True
 
 DATA:
   IMG_HEIGHT: 224
   IMG_WIDTH: 224
-  DATASET: 'ltcc'
+  DATASET: 'prcc'
+  RANDOM_NOISE: True
 
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
@@ -30,6 +33,6 @@ TEST:
   WEIGHT: ''
   TYPE: 'image_only'
   FEAT_NORM: 'yes'
-OUTPUT_DIR: ''
+OUTPUT_DIR: '../MADE/logs'
 
 

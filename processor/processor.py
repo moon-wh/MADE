@@ -84,29 +84,42 @@ def do_train(cfg,
                 meta = torch.stack(meta, dim=0)
                 meta = meta.cuda(non_blocking=True)
                 if cfg.MODEL.MASK_META:
-                    meta[:, 5:21] = 0
-                    meta[:, 35:57] = 0
-                    meta[:, 84] = 0
-                    meta[:, 90] = 0
-                    meta[:, 92:96] = 0
-                    meta[:, 97] = 0
-                    meta[:, 100] = 0
-                    meta[:, 102:105] = 0
+                    if cfg.DATA.RANDOM_NOISE:
+                        exclude_columns = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                                           35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
+                                           53, 54, 55, 56,
+                                           84, 90, 92, 93, 94, 95, 97, 100, 102, 103, 104]
+                        random_matrix = torch.ones_like(meta, dtype=torch.int64)
+                        random_matrix = random_matrix.to(device).to(meta.dtype)
+                        all_columns = set(range(meta.shape[1]))
+                        include_columns = list(all_columns - set(exclude_columns))
+                        random_columns = torch.tensor(include_columns, dtype=torch.long).to(device)
+                        random_columns = random_columns[
+                            torch.randperm(len(random_columns))[:int(0.5 * len(random_columns))]]
+                        random_matrix[:, random_columns] = torch.randint(2, size=(meta.shape[0], len(random_columns)),
+                                                                         dtype=random_matrix.dtype, device=device)
+                        random_matrix[:, exclude_columns] = 0
+                        meta = meta * random_matrix
+                    else:
+                        meta[:, 5:21] = 0
+                        meta[:, 35:57] = 0
+                        meta[:, 84] = 0
+                        meta[:, 90] = 0
+                        meta[:, 92:96] = 0
+                        meta[:, 97] = 0
+                        meta[:, 100] = 0
+                        meta[:, 102:105] = 0
             else:
                 samples, targets, camids,_, clothes,meta,text = data
                 meta = None
 
             samples = samples.cuda(non_blocking=True)
             targets = targets.cuda(non_blocking=True)
-            clothes = clothes.cuda(non_blocking=True)
             optimizer.zero_grad()
             optimizer_center.zero_grad()
             with amp.autocast(enabled=True):
                 if cfg.MODEL.ADD_META:
-                    if cfg.MODEL.CLOTH_ONLY:
-                        score, feat = model(samples, clothes)
-                    else:
-                        score, feat = model(samples, clothes, meta)
+                    score, feat = model(samples, meta)
 
                 else:
                     score, feat = model(samples)
@@ -224,23 +237,19 @@ def test(cfg, model, evaluator, val_loader, logger, device, epoch=None, rank_wri
         with torch.no_grad():
             imgs = imgs.to(device)
             meta = meta.to(device)
-            clothes_ids = clothes_ids.to(device)
             meta = meta.to(torch.float32)
-            if cfg.MODEL.CLOTH_ONLY:
-                feat = model(imgs, clothes_ids)
-            else:
-                if cfg.MODEL.MASK_META:
-                    meta[:, 5:21] = 0
-                    meta[:, 35:57] = 0
-                    meta[:, 84] = 0
-                    meta[:, 90] = 0
-                    meta[:, 92:96] = 0
-                    meta[:, 97] = 0
-                    meta[:, 100] = 0
-                    meta[:, 102:105] = 0
-                if cfg.TEST.TYPE == 'image_only':
-                    meta = torch.zeros_like(meta)
-                feat = model(imgs, clothes_ids, meta)
+            if cfg.MODEL.MASK_META:
+                meta[:, 5:21] = 0
+                meta[:, 35:57] = 0
+                meta[:, 84] = 0
+                meta[:, 90] = 0
+                meta[:, 92:96] = 0
+                meta[:, 97] = 0
+                meta[:, 100] = 0
+                meta[:, 102:105] = 0
+            if cfg.TEST.TYPE == 'image_only':
+                meta = torch.zeros_like(meta)
+            feat = model(imgs, meta)
             if cc:
                 evaluator.update((feat, pids, camids, clothes_id))
             else:

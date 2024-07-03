@@ -1,18 +1,20 @@
 MODEL:
-  TYPE: eva02_meta_cloth
-  NAME: eva02_meta_cloth_l
+  TYPE: eva02_meta
+  NAME: eva02_l_meta
   META_DIMS: [ 105, ]
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
   NO_MARGIN: True
-  ADD_META: True
+  DEVICE_ID: ('6')
   MASK_META: True
+  ADD_META: True
 
 DATA:
   IMG_HEIGHT: 224
   IMG_WIDTH: 224
-  DATASET: 'celeb_light'
+  DATASET: 'prcc'
+
 
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
@@ -29,8 +31,8 @@ SOLVER:
 
 TEST:
   WEIGHT: ''
-  FEAT_NORM: 'yes'
   TYPE: 'image_only'
-OUTPUT_DIR: '../MADE/logs/Celeb'
+  FEAT_NORM: 'yes'
+OUTPUT_DIR: ''
 
 

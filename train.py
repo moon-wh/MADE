@@ -11,7 +11,7 @@ import os
 import argparse
 from config import cfg
 from model import build_model
-from utilss import  auto_resume_helper,load_checkpoint
+
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     else:
         trainloader, queryloader, galleryloader, dataset, train_sampler,val_loader = build_dataloader(cfg)
 
-    model = build_model(cfg,dataset.num_train_pids,dataset.num_train_clothes)
+    model = build_model(cfg,dataset.num_train_pids)
 
     loss_func, center_criterion = make_loss(cfg, num_classes=dataset.num_train_pids)
 

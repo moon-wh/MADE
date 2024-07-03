@@ -26,7 +26,7 @@ Modifications by / Copyright 2023 Ross Wightman, original copyrights below
 # EVA02 models Copyright (c) 2023 BAAI-Vision
 
 import math
-from typing import Callable, Optional, Tuple, Union, List
+from typing import Callable, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -42,11 +42,7 @@ from timm.models.helpers  import build_model_with_cfg
 from timm.models.registry import generate_default_cfgs, register_model
 
 from torchinfo import summary
-from .meta_encoder import ResNormLayer
-from .MHSA import Mlp
-# from meta_encoder import ResNormLayer
-# from MHSA import Mlp
-
+from fvcore.nn import flop_count
 __all__ = ['Eva']
 
 
@@ -63,7 +59,6 @@ class EvaAttention(nn.Module):
             proj_drop: float = 0.,
             attn_head_dim: Optional[int] = None,
             norm_layer: Optional[Callable] = None,
-            add_meta: bool = False,
     ):
         """
 
@@ -106,7 +101,7 @@ class EvaAttention(nn.Module):
         self.norm = norm_layer(all_head_dim) if norm_layer is not None else nn.Identity()
         self.proj = nn.Linear(all_head_dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
-        self.add_meta = add_meta
+
     def forward(
             self,
             x,
@@ -126,12 +121,8 @@ class EvaAttention(nn.Module):
             v = self.v_proj(x).reshape(B, N, self.num_heads, -1).transpose(1, 2)
 
         if rope is not None:
-            if self.add_meta:
-                q = torch.cat([q[:, :, :2, :], apply_rot_embed_cat(q[:, :, 2:, :], rope)], 2).type_as(v)
-                k = torch.cat([k[:, :, :2, :], apply_rot_embed_cat(k[:, :, 2:, :], rope)], 2).type_as(v)
-            else:
-                q = torch.cat([q[:, :, :1, :], apply_rot_embed_cat(q[:, :, 1:, :], rope)], 2).type_as(v)
-                k = torch.cat([k[:, :, :1, :], apply_rot_embed_cat(k[:, :, 1:, :], rope)], 2).type_as(v)
+            q = torch.cat([q[:, :, :1, :], apply_rot_embed_cat(q[:, :, 1:, :], rope)], 2).type_as(v)
+            k = torch.cat([k[:, :, :1, :], apply_rot_embed_cat(k[:, :, 1:, :], rope)], 2).type_as(v)
 
         if self.fused_attn:
             x = F.scaled_dot_product_attention(
@@ -175,7 +166,6 @@ class EvaBlock(nn.Module):
             act_layer: Callable = nn.GELU,
             norm_layer: Callable = LayerNorm,
             attn_head_dim: Optional[int] = None,
-            add_meta: bool = False,
     ):
         """
 
@@ -207,7 +197,6 @@ class EvaBlock(nn.Module):
             proj_drop=proj_drop,
             attn_head_dim=attn_head_dim,
             norm_layer=norm_layer if scale_attn_inner else None,
-            add_meta=add_meta,
         )
         self.gamma_1 = nn.Parameter(init_values * torch.ones(dim)) if init_values is not None else None
         self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
@@ -382,11 +371,6 @@ class Eva(nn.Module):
             use_post_norm: bool = False,
             ref_feat_shape: Optional[Union[Tuple[int, int], int]] = None,
             head_init_scale: float = 0.001,
-            add_meta: bool = False,
-            meta_depth: List[Union[int,int,int]] = None,
-            meta_dims:  List[Union[int,int]] = None,
-            cloth: int = 0,
-            cloth_xishu: int = 3,
     ):
         """
 
@@ -435,14 +419,9 @@ class Eva(nn.Module):
         num_patches = self.patch_embed.num_patches
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
-        self.add_meta = add_meta
-        self.cloth_xishu = cloth_xishu
-        if self.add_meta:
-            self.cls_token_1 = nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
-            self.cls_token_2 = nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
+
         self.pos_embed = nn.Parameter(
             torch.zeros(1, num_patches + self.num_prefix_tokens, embed_dim)) if use_abs_pos_emb else None
-        self.cloth_embed = nn.Parameter(torch.zeros(cloth, 1, embed_dim))
         self.pos_drop = nn.Dropout(p=pos_drop_rate)
         if patch_drop_rate > 0:
             self.patch_drop = PatchDropout(
@@ -466,52 +445,23 @@ class Eva(nn.Module):
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
         block_fn = EvaBlockPostNorm if use_post_norm else EvaBlock
-        blocks = []
-        param_changes = [
-            {
-                'add_meta': True,
-            },
-        ]
-        for i in range(depth):
-            block_params = {
-                'dim': embed_dim,
-                'num_heads': num_heads,
-                'qkv_bias': qkv_bias,
-                'qkv_fused': qkv_fused,
-                'mlp_ratio': mlp_ratio,
-                'swiglu_mlp': swiglu_mlp,
-                'scale_mlp': scale_mlp,
-                'scale_attn_inner': scale_attn_inner,
-                'proj_drop': proj_drop_rate,
-                'attn_drop': attn_drop_rate,
-                'drop_path': dpr[i],
-                'norm_layer': norm_layer,
-                'init_values': init_values,
-                'add_meta': False,
-            }
-            if i > meta_depth[0]-1:
-                block_params.update(param_changes[0])
-            block = block_fn(**block_params)
-            blocks.append(block)
-        self.blocks = nn.ModuleList(blocks)
-        # self.blocks = nn.ModuleList([
-        #     block_fn(
-        #         dim=embed_dim,
-        #         num_heads=num_heads,
-        #         qkv_bias=qkv_bias,
-        #         qkv_fused=qkv_fused,
-        #         mlp_ratio=mlp_ratio,
-        #         swiglu_mlp=swiglu_mlp,
-        #         scale_mlp=scale_mlp,
-        #         scale_attn_inner=scale_attn_inner,
-        #         proj_drop=proj_drop_rate,
-        #         attn_drop=attn_drop_rate,
-        #         drop_path=dpr[i],
-        #         norm_layer=norm_layer,
-        #         init_values=init_values,
-        #         add_meta=False,
-        #     )
-        #     for i in range(depth)])
+        self.blocks = nn.ModuleList([
+            block_fn(
+                dim=embed_dim,
+                num_heads=num_heads,
+                qkv_bias=qkv_bias,
+                qkv_fused=qkv_fused,
+                mlp_ratio=mlp_ratio,
+                swiglu_mlp=swiglu_mlp,
+                scale_mlp=scale_mlp,
+                scale_attn_inner=scale_attn_inner,
+                proj_drop=proj_drop_rate,
+                attn_drop=attn_drop_rate,
+                drop_path=dpr[i],
+                norm_layer=norm_layer,
+                init_values=init_values,
+            )
+            for i in range(depth)])
 
         use_fc_norm = self.global_pool == 'avg'
         self.norm = nn.Identity() if use_fc_norm else norm_layer(embed_dim)
@@ -522,7 +472,6 @@ class Eva(nn.Module):
         self.apply(self._init_weights)
         if self.pos_embed is not None:
             trunc_normal_(self.pos_embed, std=.02)
-        trunc_normal_(self.cloth_embed, std=.02)
         trunc_normal_(self.cls_token, std=.02)
 
         self.fix_init_weight()
@@ -530,38 +479,7 @@ class Eva(nn.Module):
             trunc_normal_(self.head.weight, std=.02)
             self.head.weight.data.mul_(head_init_scale)
             self.head.bias.data.mul_(head_init_scale)
-        self.meta_depth = meta_depth
-        self.meta_dims = meta_dims
-        if self.add_meta:
-            #             assert len(meta_dims)==extra_token_num-1
-            for ind, meta_dim in enumerate(meta_dims):
-                meta_head_1 = nn.Sequential(
-                    nn.Linear(meta_dim, embed_dim),
-                    nn.ReLU(inplace=True),
-                    nn.LayerNorm(embed_dim),
-                    ResNormLayer(embed_dim),
-                ) if meta_dim > 0 else nn.Identity()
-                meta_head_2 = nn.Sequential(
-                    nn.Linear(meta_dim, embed_dim),
-                    nn.ReLU(inplace=True),
-                    nn.LayerNorm(embed_dim),
-                    ResNormLayer(embed_dim),
-                ) if meta_dim > 0 else nn.Identity()
-                setattr(self, f"meta_{ind + 1}_head_1", meta_head_1)
-                setattr(self, f"meta_{ind + 1}_head_2", meta_head_2)
-        self.cl_0_fc = nn.Sequential(*[Mlp(in_features=embed_dim, out_features=embed_dim),
-                                       nn.LayerNorm(embed_dim)])
-        self.cl_1_fc = nn.Sequential(*[Mlp(in_features=embed_dim, out_features=embed_dim),
-                                       nn.LayerNorm(embed_dim)])
-        self.aggregate = torch.nn.Conv1d(in_channels=3, out_channels=1, kernel_size=1)
-        self.norm_all = nn.LayerNorm(embed_dim)
-        self.norm_0 = nn.LayerNorm(embed_dim)
-        self.norm_1 = nn.LayerNorm(embed_dim)
-        self.norm_2 = nn.LayerNorm(embed_dim)
-        # self.cur_epoch = -1
-        # self.total_epoch = -1
-        self.mask_prob = 1.0
-        self.mask_type = 'linear'
+
     def fix_init_weight(self):
         def rescale(param, layer_id):
             param.div_(math.sqrt(2.0 * layer_id))
@@ -603,33 +521,15 @@ class Eva(nn.Module):
             self.global_pool = global_pool
         self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
-    def forward_features(self, x,cloth_id, meta=None):
+    def forward_features(self, x):
         x = self.patch_embed(x)
+
         if self.cls_token is not None:
             x = torch.cat((self.cls_token.expand(x.shape[0], -1, -1), x), dim=1)
-        if self.add_meta:
-            B = x.shape[0]
-            extra_tokens_1 = [self.cls_token_1]
-            extra_tokens_2 = [self.cls_token_2]
-            assert meta != None, 'meta is None'
-            if len(self.meta_dims) > 1:
-                metas = torch.split(meta, self.meta_dims, dim=1)
-            else:
-                metas = (meta,)
-            for ind, cur_meta in enumerate(metas):
-                meta_head_1 = getattr(self, f"meta_{ind + 1}_head_1")
-                meta_head_2 = getattr(self, f"meta_{ind + 1}_head_2")
-                meta_1 = meta_head_1(cur_meta)
-                meta_1 = meta_1.reshape(B, -1, self.embed_dim)
-                meta_2 = meta_head_2(cur_meta)
-                meta_2 = meta_2.reshape(B, -1, self.embed_dim)
-                extra_tokens_1.append(meta_1)
-                extra_tokens_2.append(meta_2)
-
 
         # apply abs position embedding
         if self.pos_embed is not None:
-            x = x + self.pos_embed + self.cloth_xishu * self.cloth_embed[cloth_id]
+            x = x + self.pos_embed
         x = self.pos_drop(x)
 
         # obtain shared rotary position embedding and apply patch dropout
@@ -639,72 +539,14 @@ class Eva(nn.Module):
             if rot_pos_embed is not None and keep_indices is not None:
                 rot_pos_embed = apply_keep_indices_nlc(x, rot_pos_embed, keep_indices)
 
-        # for blk in self.blocks:
-        #     if self.grad_checkpointing and not torch.jit.is_scripting():
-        #         x = checkpoint(blk, x, rope=rot_pos_embed)
-        #     else:
-        #         x = blk(x, rope=rot_pos_embed)
-        if self.add_meta:
-            blocks_partitioned = [self.blocks[i:i + num_blocks] for num_blocks in self.meta_depth for i in
-                                  range(0, len(self.blocks), num_blocks)]
-            for ind, blk in enumerate(blocks_partitioned[0]):
-                if self.grad_checkpointing and not torch.jit.is_scripting():
-                    x = checkpoint(blk, x, rope=rot_pos_embed)
-                else:
-                    x = blk(x, rope=rot_pos_embed)
-            cls_0 = x[:, :1, :]
-            cls_0 = self.norm_0(cls_0)
-            cls_0 = self.cl_0_fc(cls_0)
-            x = x[:, 1:, :]
-            for ind, blk in enumerate(blocks_partitioned[1]):
-                if ind == 0:
-                    extra_tokens_1 = [token.expand(x.shape[0], -1, -1) for token in extra_tokens_1]
-                    extra_tokens_1.append(x)
-                    x = torch.cat(extra_tokens_1, dim=1)
-                # else:
-                #     extra_tokens_1 = None
-                #     extra_tokens_1 = [token.expand(x.shape[0], -1, -1) for token in extra_tokens_1]
-                #     extra_tokens_1.append(x)
-                #     x = torch.cat(extra_tokens_1, dim=1)
-                #     print(x.shape,'22222222222222222222222222')
-                if self.grad_checkpointing and not torch.jit.is_scripting():
-                    x = checkpoint(blk, x, rope=rot_pos_embed)
-                else:
-                    x = blk(x, rope=rot_pos_embed)
-            cls_1 = x[:, :1, :]
-            cls_1 = self.norm_1(cls_1)
-            cls_1 = self.cl_1_fc(cls_1)
-            x = x[:, 2:, :]
-            for ind, blk in enumerate(blocks_partitioned[2]):
-                if ind == 0:
-                    extra_tokens_2 = [token.expand(x.shape[0], -1, -1) for token in extra_tokens_2]
-                    extra_tokens_2.append(x)
-                    x = torch.cat(extra_tokens_2, dim=1)
-                # else:
-                #     extra_tokens_2 = None
-                #     extra_tokens_2 = [token.expand(x.shape[0], -1, -1) for token in extra_tokens_2]
-                #     extra_tokens_2.append(x)
-                #     x = torch.cat(extra_tokens_2, dim=1)
-                if self.grad_checkpointing and not torch.jit.is_scripting():
-                    x = checkpoint(blk, x, rope=rot_pos_embed)
-                else:
-                    x = blk(x, rope=rot_pos_embed)
-            cls_2 = x[:, :1, :]
-            cls_2 = self.norm_2(cls_2)
+        for blk in self.blocks:
+            if self.grad_checkpointing and not torch.jit.is_scripting():
+                x = checkpoint(blk, x, rope=rot_pos_embed)
+            else:
+                x = blk(x, rope=rot_pos_embed)
 
-            cls = torch.cat((cls_0,cls_1, cls_2), dim=1)  # B,2,C
-            cls = self.aggregate(cls).squeeze(dim=1)  # B,C
-            cls = self.norm_all(cls)
-            return cls
-        else:
-            for ind, blk in enumerate(self.blocks):
-                if self.grad_checkpointing and not torch.jit.is_scripting():
-                    x = checkpoint(blk, x, rope=rot_pos_embed)
-                else:
-                    x = blk(x, rope=rot_pos_embed)
-
-            x = self.norm(x)
-            return x
+        x = self.norm(x)
+        return x
 
     def forward_head(self, x, pre_logits: bool = False):
         if self.global_pool:
@@ -713,29 +555,14 @@ class Eva(nn.Module):
         x = self.head_drop(x)
         return x if pre_logits else self.head(x)
 
-    def forward(self, x, cloth_id,meta=None,cur_epoch=-1,total_epoch=-1):
-        if meta is not None:
-            if self.mask_type=='linear':
-                num_intervals = total_epoch // 5  # 定义每隔5个epoch变化一次
-                cur_mask_prob = self.mask_prob - (cur_epoch // 5) / num_intervals
-                # cur_mask_prob = self.mask_prob - cur_epoch/total_epoch
-            else:
-                cur_mask_prob = self.mask_prob
-            if cur_mask_prob != 0 and self.training:
-                mask = torch.ones_like(meta)
-                mask_index = torch.randperm(meta.size(0))[:int(meta.size(0)*cur_mask_prob)]
-                mask[mask_index] = 0
-                meta = mask * meta
-        feat = self.forward_features(x,cloth_id,meta)
-        if self.add_meta:
-            if not self.training:
-                return feat
-            else:
-                cls_score = self.head(feat)
-                return cls_score, feat
+    def forward(self, x):
+        x = self.forward_features(x)
+        feat = self.forward_head(x, pre_logits=True)
+        if not self.training:
+            return feat
         else:
-            x = self.forward_head(feat)
-            return x
+            cls_score = self.head(feat)
+            return cls_score, feat
 
     def load_param(self, trained_path):
         param_dict = torch.load(trained_path)
@@ -846,6 +673,105 @@ def _cfg(url='', **kwargs):
 
 default_cfgs = generate_default_cfgs({
 
+    # EVA 01 CLIP fine-tuned on imagenet-1k
+    'eva_giant_patch14_224.clip_ft_in1k': _cfg(
+        # hf_hub_id='BAAI/EVA', hf_hub_filename='eva_clip_vis_enc_sz224_ftcls_89p1.pt',
+        hf_hub_id='timm/',
+    ),
+    'eva_giant_patch14_336.clip_ft_in1k': _cfg(
+        # hf_hub_id='BAAI/EVA', hf_hub_filename='eva_clip_vis_enc_sz336_ftcls_89p4.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 336, 336), crop_pct=1.0, crop_mode='squash'),
+
+    # MIM EVA 01 pretrain, ft on in22k -> in1k
+    'eva_giant_patch14_336.m30m_ft_in22k_in1k': _cfg(
+        # hf_hub_id='BAAI/EVA', hf_hub_filename='eva_21k_1k_336px_psz14_ema_89p6.pt',
+        hf_hub_id='timm/',
+        mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD,
+        input_size=(3, 336, 336), crop_pct=1.0, crop_mode='squash'),
+    'eva_giant_patch14_560.m30m_ft_in22k_in1k': _cfg(
+        # hf_hub_id='BAAI/EVA', hf_hub_filename='eva_21k_1k_560px_psz14_ema_89p7.pt',
+        hf_hub_id='timm/',
+        mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD,
+        input_size=(3, 560, 560), crop_pct=1.0, crop_mode='squash'),
+
+    # in22k or m38m MIM pretrain w/ intermediate in22k fine-tune and final in1k fine-tune
+    'eva02_base_patch14_448.mim_in22k_ft_in22k_in1k': _cfg(
+        # hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in21k_to_in1k/eva02_B_pt_in21k_medft_in21k_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0, crop_mode='squash',
+    ),
+    'eva02_large_patch14_448.mim_in22k_ft_in22k_in1k': _cfg(
+        # hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in21k_to_in1k/eva02_L_pt_in21k_medft_in21k_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0, crop_mode='squash',
+    ),
+    'eva02_large_patch14_448.mim_m38m_ft_in22k_in1k': _cfg(
+        hf_hub_id='timm/',
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in21k_to_in1k/eva02_L_pt_m38m_medft_in21k_ft_in1k_p14.pt',
+        input_size=(3, 448, 448), crop_pct=1.0, crop_mode='squash',
+    ),
+
+    # in22k or m3m MIM pretrain w/ in1k fine-tune
+    'eva02_tiny_patch14_336.mim_in22k_ft_in1k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in1k/eva02_Ti_pt_in21k_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 336, 336), crop_pct=1.0,
+    ),
+    'eva02_small_patch14_336.mim_in22k_ft_in1k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in1k/eva02_S_pt_in21k_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 336, 336), crop_pct=1.0,
+    ),
+    'eva02_base_patch14_448.mim_in22k_ft_in1k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in1k/eva02_B_pt_in21k_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0,
+    ),
+    'eva02_large_patch14_448.mim_in22k_ft_in1k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in1k/eva02_L_pt_in21k_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0,
+    ),
+    'eva02_large_patch14_448.mim_m38m_ft_in1k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in1k/eva02_L_pt_m38m_ft_in1k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0,
+    ),
+
+    # in22k or m3m MIM pretrain w/ in22k fine-tune
+    'eva02_base_patch14_448.mim_in22k_ft_in22k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in21k/eva02_B_pt_in21k_medft_in21k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0, crop_mode='squash', num_classes=21841,
+    ),
+    'eva02_large_patch14_448.mim_in22k_ft_in22k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in21k/eva02_L_pt_in21k_medft_in21k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0, crop_mode='squash', num_classes=21841,
+    ),
+    'eva02_large_patch14_448.mim_m38m_ft_in22k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/cls/in21k/eva02_L_pt_m38m_medft_in21k_p14.pt',
+        hf_hub_id='timm/',
+        input_size=(3, 448, 448), crop_pct=1.0, crop_mode='squash', num_classes=21841,
+    ),
+
+    # in22k or m38m MIM pretrain
+    'eva02_tiny_patch14_224.mim_in22k': _cfg(
+        # hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/pt/eva02_Ti_pt_in21k_p14.pt',
+        hf_hub_id='timm/',
+        num_classes=0,
+    ),
+    'eva02_small_patch14_224.mim_in22k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/pt/eva02_S_pt_in21k_p14.pt',
+        hf_hub_id='timm/',
+        num_classes=0,
+    ),
+    'eva02_base_patch14_224.mim_in22k': _cfg(
+        #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/pt/eva02_B_pt_in21k_p14.pt',
+        hf_hub_id='timm/',
+        num_classes=0,
+    ),
     'eva02_large_patch14_224.mim_in22k': _cfg(
         #hf_hub_id='Yuxin-CV/EVA-02', hf_hub_filename='eva02/pt/eva02_L_pt_in21k_p14.pt',
         hf_hub_id='timm/',
@@ -856,18 +782,261 @@ default_cfgs = generate_default_cfgs({
         hf_hub_id='timm/',
         num_classes=0,
     ),
+
+    # EVA01 and EVA02 CLIP image towers
+    'eva_giant_patch14_clip_224.laion400m': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA01_CLIP_g_14_plus_psz14_s11B.pt',
+        hf_hub_id='timm/eva_giant_patch14_clip_224.laion400m_s11b_b41k',  # float16 weights
+        hf_hub_filename='open_clip_pytorch_model.bin',
+        num_classes=1024,
+    ),
+    'eva_giant_patch14_clip_224.merged2b': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA01_CLIP_g_14_plus_psz14_s11B.pt',
+        hf_hub_id='timm/eva_giant_patch14_plus_clip_224.merged2b_s11b_b114k',  # float16 weights
+        hf_hub_filename='open_clip_pytorch_model.bin',
+        num_classes=1024,
+    ),
+    'eva02_base_patch16_clip_224.merged2b': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA02_CLIP_L_psz14_s4B.pt',
+        hf_hub_id='timm/eva02_base_patch16_clip_224.merged2b_s8b_b131k',  # float16 weights
+        hf_hub_filename='open_clip_pytorch_model.bin',
+        num_classes=512,
+    ),
     'eva02_large_patch14_clip_224.merged2b': _cfg(
         # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA02_CLIP_L_psz14_s4B.pt',
         hf_hub_id='timm/eva02_large_patch14_clip_224.merged2b_s4b_b131k',  # float16 weights
         hf_hub_filename='open_clip_pytorch_model.bin',
         num_classes=768,
     ),
+    'eva02_large_patch14_clip_336.merged2b': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA02_CLIP_L_psz14_s4B.pt',
+        hf_hub_id='timm/eva02_large_patch14_clip_336.merged2b_s6b_b61k',  # float16 weights
+        hf_hub_filename='open_clip_pytorch_model.bin',
+        input_size=(3, 336, 336), crop_pct=1.0,
+        num_classes=768,
+    ),
+    'eva02_enormous_patch14_clip_224.laion2b': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA02_CLIP_E_psz14_plus_s9B.pt',
+        hf_hub_id='timm/eva02_enormous_patch14_clip_224.laion2b_s4b_b115k',  # float16 weights
+        hf_hub_filename='open_clip_pytorch_model.bin',
+        num_classes=1024,
+    ),
+    'eva02_enormous_patch14_clip_224.laion2b_plus': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA02_CLIP_E_psz14_plus_s9B.pt',
+        hf_hub_id='timm/eva02_enormous_patch14_plus_clip_224.laion2b_s9b_b144k',  # bfloat16 weights
+        hf_hub_filename='open_clip_pytorch_model.bin',
+        num_classes=1024,
+    ),
+    'eva02_enormous_patch14_clip_224.pretrain': _cfg(
+        # hf_hub_id='QuanSun/EVA-CLIP', hf_hub_filename='EVA02_E_psz14.pt',
+        num_classes=0,
+    ),
 
 })
 
 
 @register_model
-def eva02_large_patch14_clip_224_meta_cloth(pretrained=False, **kwargs) -> Eva:
+def eva_giant_patch14_224(pretrained=False, **kwargs) -> Eva:
+    """ EVA-g model https://arxiv.org/abs/2211.07636 """
+    model_args = dict(patch_size=14, embed_dim=1408, depth=40, num_heads=16, mlp_ratio=6144 / 1408)
+    model = _create_eva('eva_giant_patch14_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva_giant_patch14_336(pretrained=False, **kwargs) -> Eva:
+    """ EVA-g model https://arxiv.org/abs/2211.07636 """
+    model_args = dict(patch_size=14, embed_dim=1408, depth=40, num_heads=16, mlp_ratio=6144 / 1408)
+    model = _create_eva('eva_giant_patch14_336', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva_giant_patch14_560(pretrained=False, **kwargs) -> Eva:
+    """ EVA-g model https://arxiv.org/abs/2211.07636 """
+    model_args = dict(patch_size=14, embed_dim=1408, depth=40, num_heads=16, mlp_ratio=6144 / 1408)
+    model = _create_eva('eva_giant_patch14_560', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_tiny_patch14_224(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=224,
+        patch_size=14,
+        embed_dim=192,
+        depth=12,
+        num_heads=3,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_tiny_patch14_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_small_patch14_224(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=224,
+        patch_size=14,
+        embed_dim=384,
+        depth=12,
+        num_heads=6,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_small_patch14_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_base_patch14_224(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=224,
+        patch_size=14,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        qkv_fused=False,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        scale_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_base_patch14_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_large_patch14_224(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=224,
+        patch_size=14,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        mlp_ratio=4 * 2 / 3,
+        qkv_fused=False,
+        swiglu_mlp=True,
+        scale_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_large_patch14_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_tiny_patch14_336(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=336,
+        patch_size=14,
+        embed_dim=192,
+        depth=12,
+        num_heads=3,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_tiny_patch14_336', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_small_patch14_336(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=336,
+        patch_size=14,
+        embed_dim=384,
+        depth=12,
+        num_heads=6,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_small_patch14_336', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_base_patch14_448(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=448,
+        patch_size=14,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        qkv_fused=False,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        scale_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_base_patch14_448', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_large_patch14_448(pretrained=False, **kwargs) -> Eva:
+    model_args = dict(
+        img_size=448,
+        patch_size=14,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        mlp_ratio=4 * 2 / 3,
+        qkv_fused=False,
+        swiglu_mlp=True,
+        scale_mlp=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+    )
+    model = _create_eva('eva02_large_patch14_448', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva_giant_patch14_clip_224(pretrained=False, **kwargs) -> Eva:
+    """ EVA-g CLIP model (only difference from non-CLIP is the pooling)  """
+    model_args = dict(
+        patch_size=14, embed_dim=1408, depth=40, num_heads=16, mlp_ratio=6144 / 1408,
+        global_pool=kwargs.pop('global_pool', 'token'))
+    model = _create_eva('eva_giant_patch14_clip_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_base_patch16_clip_224(pretrained=False, **kwargs) -> Eva:
+    """ A EVA-CLIP specific variant that adds additional attn scale layernorm to eva02_base """
+    model_args = dict(
+        img_size=224,
+        patch_size=16,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        qkv_fused=False,
+        mlp_ratio=4 * 2 / 3,
+        swiglu_mlp=True,
+        scale_mlp=True,
+        scale_attn_inner=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+        global_pool=kwargs.pop('global_pool', 'token'),
+    )
+    model = _create_eva('eva02_base_patch16_clip_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_large_patch14_clip_224(pretrained=False, **kwargs) -> Eva:
     """ A EVA-CLIP specific variant that adds additional attn scale layernorm to eva02_large """
     model_args = dict(
         img_size=224,
@@ -883,22 +1052,61 @@ def eva02_large_patch14_clip_224_meta_cloth(pretrained=False, **kwargs) -> Eva:
         use_rot_pos_emb=True,
         ref_feat_shape=(16, 16),  # 224/14
         global_pool=kwargs.pop('global_pool', 'token'),
-        add_meta=True,
-        meta_depth=[10, 10, 4],
-        meta_dims=[105,],
-        cloth=300,
     )
     model = _create_eva('eva02_large_patch14_clip_224', pretrained=pretrained, **dict(model_args, **kwargs))
     return model
 
 
+@register_model
+def eva02_large_patch14_clip_336(pretrained=False, **kwargs) -> Eva:
+    """ A EVA-CLIP specific variant that adds additional attn scale layernorm to eva02_large """
+    model_args = dict(
+        img_size=336,
+        patch_size=14,
+        embed_dim=1024,
+        depth=24,
+        num_heads=16,
+        mlp_ratio=4 * 2 / 3,
+        qkv_fused=False,
+        swiglu_mlp=True,
+        scale_mlp=True,
+        scale_attn_inner=True,
+        use_rot_pos_emb=True,
+        ref_feat_shape=(16, 16),  # 224/14
+        global_pool=kwargs.pop('global_pool', 'token'),
+    )
+    model = _create_eva('eva02_large_patch14_clip_336', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def eva02_enormous_patch14_clip_224(pretrained=False, **kwargs) -> Eva:
+    """ A EVA-CLIP specific variant that uses residual post-norm in blocks """
+    model_args = dict(
+        img_size=224,
+        patch_size=14,
+        embed_dim=1792,
+        depth=64,
+        num_heads=16,
+        mlp_ratio=15360 / 1792,
+        use_post_norm=True,
+        global_pool=kwargs.pop('global_pool', 'token'),
+    )
+    model = _create_eva('eva02_enormous_patch14_clip_224', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
 if __name__ == "__main__":
     x = torch.randn([2, 3, 224, 224])
-    meta = torch.randn([2,105])
-    cloth_id = torch.tensor([2,3])
-    model = eva02_large_patch14_clip_224_meta_cloth()
+    model = eva02_large_patch14_clip_224()
     # import ipdb;ipdb.set_trace()
-    output = model(x,cloth_id,meta)
-    print(output[0].shape)
-    # print(summary(model, input_size=((8, 3, 224, 224),(3,7))))
-
+    output = model(x)
+    print(output[1].shape)
+    # print(summary(model, input_size=(8, 3, 224, 224)))
+    vector_params = torch.nn.utils.parameters_to_vector(model.parameters())
+    total_params_vector = vector_params.numel()
+    print(f"Total number of parameters using parameters_to_vector: {total_params_vector}")
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total number of parameters: {total_params}")
+    inputs = (x)
+    flops = flop_count(model, inputs)
+    print(f"Total FLOPs: {flops}")
